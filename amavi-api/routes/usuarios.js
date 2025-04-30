@@ -1,8 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const controller = require('../controllers/usuariosController');
+const UsuariosController = require('../controllers/usuariosController');
 
-router.get('/', controller.getUsuarios);
-router.post('/', controller.createUsuario);
+router.get('/', UsuariosController.getUsuarios);
+router.post('/', UsuariosController.createUsuario);
+
+// Rota para cadastrar um novo usuário
+router.post('/cadastrar', UsuariosController.cadastrarUsuario);
 
 module.exports = router;

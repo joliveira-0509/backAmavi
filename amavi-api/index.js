@@ -6,6 +6,7 @@ const loginRoutes = require('./routes/login');
 
 const app = express();
 
+// Middleware para interpretar JSON
 app.use(express.json());
 
 // CORS – apenas o frontend autorizado pode acessar
@@ -22,11 +23,11 @@ db.connect((err) => {
   }
 });
 
-
-app.use('/api/usuarios', usuariosRoutes);
+// Rotas
+app.use('/usuarios', usuariosRoutes);
 app.use('/api/login', loginRoutes);
 
-const PORT = 3306;
+const PORT = 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando na porta ${PORT}`);
+  console.log(`Servidor rodando na porta ${PORT}`);
 });

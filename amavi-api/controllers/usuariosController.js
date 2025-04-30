@@ -2,10 +2,31 @@ const UsuariosModel = require('../models/usuariosModel');
 
 const UsuariosController = {
     cadastrarUsuario: (req, res) => {
-        const { nome, cpf, rg, endereco, email, num_sus, bp_tratamento, bp_acompanhamento, tipo_usuario, id_responsavel, foto_url } = req.body;
+        const {
+            nome,
+            cpf,
+            rg,
+            endereco,
+            email,
+            num_sus,
+            bp_tratamento,
+            bp_acompanhamento,
+            tipo_usuario,
+            id_responsavel,
+            foto_url
+        } = req.body;
 
         if (!nome || !cpf) {
             return res.status(400).json({ error: 'Nome e CPF são obrigatórios.' });
+        }
+
+        const tiposValidos = ['responsavel', 'paciente'];
+        if (!tiposValidos.includes(tipo_usuario)) {
+            return res.status(400).json({ error: `Tipo de usuário inválido. Valores permitidos: ${tiposValidos.join(', ')}` });
+        }
+
+        if (tipo_usuario === 'paciente' && !id_responsavel) {
+            return res.status(400).json({ error: 'O campo id_responsavel é obrigatório para pacientes.' });
         }
 
         const novoUsuario = {
@@ -82,15 +103,15 @@ const UsuariosController = {
                 return res.status(404).json({ error: 'Usuário não encontrado.' });
             }
 
-            // Registrar o evento de exclusão antes de deletar o usuário
-            UsuariosModel.registrarEvento(id, 'exclusao', (errEvento) => {
+            // Registrar evento antes da exclusão
+            UsuariosModel.registrarEvento(id, 'usuario deletado', (errEvento) => {
                 if (errEvento) {
                     console.error('Erro ao registrar evento de exclusão:', errEvento);
                     return res.status(500).json({ error: 'Erro ao registrar evento de exclusão.' });
                 }
 
-                // Deletar o usuário após registrar o evento
-                UsuariosModel.deletarUsuario(id, (err, result) => {
+                // Excluir usuário após registrar o evento
+                UsuariosModel.deletarUsuario(id, (err) => {
                     if (err) {
                         console.error('Erro ao deletar usuário:', err);
                         return res.status(500).json({ error: 'Erro ao deletar usuário.' });

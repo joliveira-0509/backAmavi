@@ -21,6 +21,42 @@ const UsuariosModel = {
         ];
 
         db.query(query, values, callback);
+    },
+
+    buscarPorCPF: (cpf, callback) => {
+        const query = `SELECT * FROM Usuarios WHERE cpf = ?`;
+        db.query(query, [cpf], (err, results) => {
+            if (err) return callback(err, null);
+            callback(null, results[0]); // Retorna o primeiro usuário encontrado ou null
+        });
+    },
+
+    buscarPorNome: (nome, callback) => {
+        const query = `SELECT * FROM Usuarios WHERE nome LIKE ?`;
+        db.query(query, [`%${nome}%`], callback);
+    },
+
+    buscarPorId: (id, callback) => {
+        const query = `SELECT * FROM Usuarios WHERE id = ?`;
+        db.query(query, [id], (err, results) => {
+            if (err) return callback(err, null);
+            callback(null, results[0]); // Retorna o primeiro usuário encontrado ou null
+        });
+    },
+
+    registrarEvento: (idUsuario, tipoEvento, callback) => {
+        const query = `
+            INSERT INTO EventoUsuario (id_usuario, tipo_evento)
+            VALUES (?, ?)
+        `;
+        const values = [idUsuario, tipoEvento];
+
+        db.query(query, values, callback);
+    },
+
+    deletarUsuario: (id, callback) => {
+        const query = `DELETE FROM Usuarios WHERE id = ?`;
+        db.query(query, [id], callback);
     }
 };
 

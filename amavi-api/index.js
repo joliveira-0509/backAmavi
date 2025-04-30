@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const db = require('./db/db');
 const usuariosRoutes = require('./routes/usuarios');
-const loginRoutes = require('./routes/login');
 
 const app = express();
 
@@ -25,7 +24,6 @@ db.connect((err) => {
 
 // Rotas
 app.use('/usuarios', usuariosRoutes);
-app.use('/api/login', loginRoutes);
 
 const PORT = 3000;
 app.listen(PORT, () => {

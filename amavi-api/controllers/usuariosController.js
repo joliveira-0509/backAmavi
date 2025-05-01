@@ -1,5 +1,5 @@
 const UsuariosModel = require('../models/usuariosModel');
-const db = require('../db/db'); // Adicionar a importação do banco de dados
+const db = require('../db/db'); // Importa o pool já com suporte a Promises
 
 function calcularIdade(dataNasc) {
     const hoje = new Date();
@@ -12,7 +12,6 @@ function calcularIdade(dataNasc) {
     return idade;
 }
 
-// Função auxiliar para validação de tipo de usuário
 function validarTipoUsuario(tipo_usuario, idade, id_responsavel) {
     const tiposValidos = ['responsavel', 'usuario', 'dependente'];
     if (!tiposValidos.includes(tipo_usuario)) {
@@ -41,30 +40,39 @@ function validarTipoUsuario(tipo_usuario, idade, id_responsavel) {
 
 const UsuariosController = {
     cadastrarUsuario: async (req, res) => {
+        const conn = await db.getConnection();
         try {
-            const usuario = req.body;
+            await conn.beginTransaction();
 
-            // 1. Cadastrar o usuário na tabela Login
+            const usuario = req.body;
+            const tipo_usuario = (usuario.tipo_usuario || 'responsavel').toLowerCase().trim();
+
+            const idade = calcularIdade(usuario.data_nascimento);
+            const erroValidacao = validarTipoUsuario(tipo_usuario, idade, usuario.id_responsavel);
+            if (erroValidacao) {
+                return res.status(400).json({ error: erroValidacao });
+            }
+
+            // ✅ 1. Cadastrar na tabela Login (REMOVIDO tipo_usuario)
             const loginSql = `
-                INSERT INTO Login (nome, senha, cpf, tipo_usuario) VALUES (?, ?, ?, ?)
+                INSERT INTO Login (nome, senha, cpf) VALUES (?, ?, ?)
             `;
-            const [loginResult] = await db.promise().execute(loginSql, [
+            const [loginResult] = await conn.execute(loginSql, [
                 usuario.nome,
                 usuario.senha,
-                usuario.cpf,
-                usuario.tipo_usuario || 'usuario' // Define o tipo de usuário como 'usuario' por padrão
+                usuario.cpf
             ]);
 
-            // Obter o ID do usuário recém-criado na tabela Login
             const id_usuario = loginResult.insertId;
 
-            // 2. Cadastrar o usuário na tabela Usuarios
+            // 2. Cadastrar na tabela Usuarios
             const usuarioSql = `
-                INSERT INTO Usuarios (id, nome, cpf, rg, endereco, email, num_sus, bp_tratamento, bp_acompanhamento, tipo_usuario, id_responsavel, data_nascimento, foto_url)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO Usuarios (
+                    nome, cpf, rg, endereco, email, num_sus, bp_tratamento,
+                    bp_acompanhamento, tipo_usuario, id_responsavel, data_nascimento, foto_url
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
-            await db.promise().execute(usuarioSql, [
-                id_usuario, // O ID do usuário na tabela Usuarios é o mesmo da tabela Login
+            await conn.execute(usuarioSql, [
                 usuario.nome,
                 usuario.cpf,
                 usuario.rg,
@@ -73,22 +81,34 @@ const UsuariosController = {
                 usuario.num_sus,
                 usuario.bp_tratamento,
                 usuario.bp_acompanhamento,
-                usuario.tipo_usuario || 'responsavel', // Define o tipo de usuário como 'responsavel' por padrão
-                usuario.id_responsavel,
+                tipo_usuario,
+                usuario.id_responsavel || null,
                 usuario.data_nascimento,
                 usuario.foto_url
             ]);
 
-            // 3. Registrar evento de cadastro na tabela EventoUsuario
+            // 3. Registrar evento
             const eventoSql = `
                 INSERT INTO EventoUsuario (id_usuario, tipo_evento) VALUES (?, ?)
             `;
-            await db.promise().execute(eventoSql, [id_usuario, 'cadastro']);
+            await conn.execute(eventoSql, [id_usuario, 'cadastro']);
 
-            return res.status(201).json({ message: 'Usuário cadastrado com sucesso!', id: id_usuario });
+            await conn.commit();
+            conn.release();
+
+            return res.status(201).json({
+                message: 'Usuário cadastrado com sucesso!',
+                id: id_usuario
+            });
+
         } catch (err) {
-            console.error('Erro ao cadastrar usuário:', err.message);
-            return res.status(500).json({ error: 'Erro ao cadastrar usuário.' });
+            await conn.rollback();
+            conn.release();
+            console.error('Erro ao cadastrar usuário:', err.message, err);
+            return res.status(500).json({
+                error: 'Erro ao cadastrar usuário.',
+                details: err.message
+            });
         }
     },
 
@@ -107,7 +127,7 @@ const UsuariosController = {
             return res.status(200).json(results);
         } catch (err) {
             console.error('Erro ao buscar usuários:', err);
-            return res.status(500).json({ error: 'Erro ao buscar usuários.' });
+            return res.status(500).json({ error: 'Erro ao buscar usuários.', details: err.message });
         }
     },
 
@@ -123,23 +143,20 @@ const UsuariosController = {
                 return res.status(404).json({ error: 'Usuário não encontrado.' });
             }
 
-            // Registrar evento de exclusão
             await UsuariosModel.registrarEvento(id, 'exclusao');
-
-            // Deletar o usuário
             await UsuariosModel.deletarUsuario(id);
 
             return res.status(200).json({ message: 'Usuário deletado com sucesso!' });
         } catch (err) {
             console.error('Erro ao deletar usuário:', err);
-            return res.status(500).json({ error: 'Erro ao deletar usuário.' });
+            return res.status(500).json({ error: 'Erro ao deletar usuário.', details: err.message });
         }
     },
 
     buscarPorId: async (id) => {
         try {
             const sql = `SELECT * FROM Usuarios WHERE id = ?`;
-            const [rows] = await db.promise().execute(sql, [id]); // Usar db.promise() para evitar erros
+            const [rows] = await db.execute(sql, [id]);
             return rows.length > 0 ? rows[0] : null;
         } catch (err) {
             console.error('Erro ao buscar usuário por ID:', err);

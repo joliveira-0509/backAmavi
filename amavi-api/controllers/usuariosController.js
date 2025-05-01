@@ -1,4 +1,5 @@
 const UsuariosModel = require('../models/usuariosModel');
+const db = require('../db/db'); // Adicionar a importação do banco de dados
 
 function calcularIdade(dataNasc) {
     const hoje = new Date();
@@ -11,90 +12,82 @@ function calcularIdade(dataNasc) {
     return idade;
 }
 
+// Função auxiliar para validação de tipo de usuário
+function validarTipoUsuario(tipo_usuario, idade, id_responsavel) {
+    const tiposValidos = ['responsavel', 'usuario', 'dependente'];
+    if (!tiposValidos.includes(tipo_usuario)) {
+        return `Tipo de usuário inválido. Valores permitidos: ${tiposValidos.join(', ')}`;
+    }
+
+    if (tipo_usuario === 'usuario' && idade < 18) {
+        return 'Usuário do tipo "usuario" deve ser maior de idade.';
+    }
+
+    if (tipo_usuario === 'dependente') {
+        if (idade >= 18) {
+            return 'Usuário do tipo "dependente" deve ser menor de idade.';
+        }
+        if (!id_responsavel) {
+            return 'O campo id_responsavel é obrigatório para usuários do tipo dependente.';
+        }
+    }
+
+    if (tipo_usuario === 'responsavel' && id_responsavel) {
+        return 'Usuários do tipo "responsavel" não devem possuir id_responsavel.';
+    }
+
+    return null;
+}
+
 const UsuariosController = {
     cadastrarUsuario: async (req, res) => {
         try {
-            const {
-                nome,
-                cpf,
-                rg,
-                endereco,
-                email,
-                num_sus,
-                bp_tratamento,
-                bp_acompanhamento,
-                tipo_usuario,
-                id_responsavel,
-                data_nascimento,
-                foto_url
-            } = req.body;
+            const usuario = req.body;
 
-            // Validação de campos obrigatórios
-            if (!nome || !cpf || !data_nascimento || !tipo_usuario) {
-                return res.status(400).json({ error: 'Nome, CPF, data de nascimento e tipo de usuário são obrigatórios.' });
-            }
+            // 1. Cadastrar o usuário na tabela Login
+            const loginSql = `
+                INSERT INTO Login (nome, senha, cpf, tipo_usuario) VALUES (?, ?, ?, ?)
+            `;
+            const [loginResult] = await db.promise().execute(loginSql, [
+                usuario.nome,
+                usuario.senha,
+                usuario.cpf,
+                usuario.tipo_usuario || 'usuario' // Define o tipo de usuário como 'usuario' por padrão
+            ]);
 
-            // Validação do tipo de usuário
-            const tiposValidos = ['responsavel', 'usuario', 'dependente'];
-            if (!tiposValidos.includes(tipo_usuario)) {
-                return res.status(400).json({ error: `Tipo de usuário inválido. Valores permitidos: ${tiposValidos.join(', ')}` });
-            }
+            // Obter o ID do usuário recém-criado na tabela Login
+            const id_usuario = loginResult.insertId;
 
-            // Calcular idade
-            const idade = calcularIdade(data_nascimento);
+            // 2. Cadastrar o usuário na tabela Usuarios
+            const usuarioSql = `
+                INSERT INTO Usuarios (id, nome, cpf, rg, endereco, email, num_sus, bp_tratamento, bp_acompanhamento, tipo_usuario, id_responsavel, data_nascimento, foto_url)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `;
+            await db.promise().execute(usuarioSql, [
+                id_usuario, // O ID do usuário na tabela Usuarios é o mesmo da tabela Login
+                usuario.nome,
+                usuario.cpf,
+                usuario.rg,
+                usuario.endereco,
+                usuario.email,
+                usuario.num_sus,
+                usuario.bp_tratamento,
+                usuario.bp_acompanhamento,
+                usuario.tipo_usuario || 'responsavel', // Define o tipo de usuário como 'responsavel' por padrão
+                usuario.id_responsavel,
+                usuario.data_nascimento,
+                usuario.foto_url
+            ]);
 
-            // Regras de negócio para cada tipo de usuário
-            if (tipo_usuario === 'usuario' && idade < 18) {
-                return res.status(400).json({ error: 'Usuário do tipo "usuario" deve ser maior de idade.' });
-            }
+            // 3. Registrar evento de cadastro na tabela EventoUsuario
+            const eventoSql = `
+                INSERT INTO EventoUsuario (id_usuario, tipo_evento) VALUES (?, ?)
+            `;
+            await db.promise().execute(eventoSql, [id_usuario, 'cadastro']);
 
-            if (tipo_usuario === 'dependente') {
-                if (idade >= 18) {
-                    return res.status(400).json({ error: 'Usuário do tipo "dependente" deve ser menor de idade.' });
-                }
-                if (!id_responsavel) {
-                    return res.status(400).json({ error: 'O campo id_responsavel é obrigatório para usuários do tipo dependente.' });
-                }
-
-                // Verificar se o responsável existe
-                const responsavel = await UsuariosModel.buscarPorId(id_responsavel);
-                if (!responsavel) {
-                    return res.status(404).json({ error: 'Responsável não encontrado.' });
-                }
-            }
-
-            if (tipo_usuario === 'responsavel' && id_responsavel) {
-                return res.status(400).json({ error: 'Usuários do tipo "responsavel" não devem possuir id_responsavel.' });
-            }
-
-            // Criar o novo usuário
-            const novoUsuario = {
-                nome,
-                cpf,
-                rg,
-                endereco,
-                email,
-                num_sus,
-                bp_tratamento,
-                bp_acompanhamento,
-                tipo_usuario,
-                id_responsavel: tipo_usuario === 'dependente' ? id_responsavel : null,
-                data_nascimento,
-                foto_url
-            };
-
-            const result = await UsuariosModel.criarUsuario(novoUsuario);
-            const idUsuario = result.insertId;
-
-            // Registrar evento de cadastro
-            await UsuariosModel.registrarEvento(idUsuario, 'cadastro');
-
-            return res.status(201).json({ message: 'Usuário cadastrado com sucesso!', id: idUsuario });
+            return res.status(201).json({ message: 'Usuário cadastrado com sucesso!', id: id_usuario });
         } catch (err) {
-            console.error('Erro ao cadastrar usuário:', err);
-            if (err.code === 'ER_DUP_ENTRY') {
-                return res.status(409).json({ error: 'CPF já cadastrado.' });
-            }
+            console.error('Erro ao cadastrar usuário:', err.message);
             return res.status(500).json({ error: 'Erro ao cadastrar usuário.' });
         }
     },
@@ -140,6 +133,17 @@ const UsuariosController = {
         } catch (err) {
             console.error('Erro ao deletar usuário:', err);
             return res.status(500).json({ error: 'Erro ao deletar usuário.' });
+        }
+    },
+
+    buscarPorId: async (id) => {
+        try {
+            const sql = `SELECT * FROM Usuarios WHERE id = ?`;
+            const [rows] = await db.promise().execute(sql, [id]); // Usar db.promise() para evitar erros
+            return rows.length > 0 ? rows[0] : null;
+        } catch (err) {
+            console.error('Erro ao buscar usuário por ID:', err);
+            throw err;
         }
     }
 };

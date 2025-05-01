@@ -1,13 +1,13 @@
-const db = require('../db/db');
-
+const db = require('../db/db.js'); 
 const UsuariosModel = {
-    criarUsuario: (usuario, callback) => {
-        const query = `
+    criarUsuario: (usuario) => {
+        const sql = `
             INSERT INTO Usuarios 
-            (nome, cpf, rg, endereco, email, num_sus, bp_tratamento, bp_acompanhamento, tipo_usuario, id_responsavel, foto_url)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (nome, cpf, rg, endereco, email, num_sus, bp_tratamento, bp_acompanhamento, tipo_usuario, id_responsavel, data_nascimento, foto_url) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
-        const values = [
+
+        const params = [
             usuario.nome,
             usuario.cpf,
             usuario.rg,
@@ -18,49 +18,31 @@ const UsuariosModel = {
             usuario.bp_acompanhamento,
             usuario.tipo_usuario,
             usuario.id_responsavel,
+            usuario.data_nascimento,
             usuario.foto_url
         ];
 
-        db.query(query, values, callback);
+        return db.execute(sql, params);
     },
 
-    registrarEvento: (idUsuario, tipoEvento, callback) => {
-        const query = `
-            INSERT INTO EventoUsuario (id_usuario, tipo_evento, data_evento)
-            VALUES (?, ?, NOW())
-        `;
-        const values = [idUsuario, tipoEvento];
-        console.log('Registrando evento:', values); // para depuração
-
-        db.query(query, values, callback);
+    buscarPorNome: (nome) => {
+        const sql = `SELECT * FROM Usuarios WHERE nome LIKE ?`;
+        return db.execute(sql, [`%${nome}%`]).then(result => result[0]);
     },
 
-    buscarPorId: (id, callback) => {
-        const query = `SELECT * FROM Usuarios WHERE id = ?`;
-        db.query(query, [id], (err, results) => {
-            if (err) return callback(err);
-            if (results.length === 0) return callback(null, null);
-            callback(null, results[0]);
-        });
+    buscarPorId: (id) => {
+        const sql = `SELECT * FROM Usuarios WHERE id = ?`;
+        return db.execute(sql, [id]).then(result => result[0][0]);
     },
 
-    deletarUsuario: (id, callback) => {
-        const query = `DELETE FROM Usuarios WHERE id = ?`;
-        db.query(query, [id], callback);
+    deletarUsuario: (id) => {
+        const sql = `DELETE FROM Usuarios WHERE id = ?`;
+        return db.execute(sql, [id]);
     },
 
-    buscarPorNome: (nome, callback) => {
-        const query = `SELECT * FROM Usuarios WHERE nome LIKE ?`;
-        db.query(query, [`%${nome}%`], callback);
-    },
-
-    contarEventos: (callback) => {
-        const query = `
-            SELECT tipo_evento, COUNT(*) AS total
-            FROM EventoUsuario
-            GROUP BY tipo_evento
-        `;
-        db.query(query, callback);
+    registrarEvento: (id_usuario, tipo_evento) => {
+        const sql = `INSERT INTO EventoUsuario (id_usuario, tipo_evento) VALUES (?, ?)`;
+        return db.execute(sql, [id_usuario, tipo_evento]);
     }
 };
 

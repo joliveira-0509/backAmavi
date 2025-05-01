@@ -1,31 +1,33 @@
 const express = require('express');
-const cors = require('cors');
-const db = require('./db/db');
+const bodyParser = require('body-parser');
 const usuariosRoutes = require('./routes/usuarios');
+const db = require('./db/db'); // Certifique-se de que este é o caminho correto para o arquivo de conexão MySQL
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-// Middleware para interpretar JSON
-app.use(express.json());
-
-// CORS – apenas o frontend autorizado pode acessar
-app.use(cors({
-  origin: 'https://amavi.dev.vilhena.ifro.edu.br'
-}));
-
-// Testador de conexão ao banco de dados
+// Testar conexão com o banco
 db.connect((err) => {
   if (err) {
-    console.error('❌ Erro ao conectar ao banco de dados:', err.message);
+    console.error('Erro ao conectar no banco de dados:', err.message);
+    process.exit(1); // Encerra a aplicação se não conectar
   } else {
-    console.log('✅ Conectado ao banco de dados com sucesso!');
+    console.log('Conectado ao banco de dados com sucesso!');
   }
 });
 
-// Rotas
-app.use('/usuarios', usuariosRoutes);
+// Middleware para analisar o corpo das requisições
+app.use(bodyParser.json());
 
-const PORT = 3000;
+// Usar as rotas de usuários
+app.use('/api', usuariosRoutes);
+
+// Rota padrão
+app.get('/', (req, res) => {
+  res.send('API de Usuários em funcionamento!');
+});
+
+// Iniciar o servidor
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });

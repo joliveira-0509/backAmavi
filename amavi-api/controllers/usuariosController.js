@@ -1,5 +1,5 @@
 const UsuariosModel = require('../models/usuariosModel');
-const db = require('../db/db'); // Importa o pool já com suporte a Promises
+const db = require('../db/db'); 
 
 function calcularIdade(dataNasc) {
     const hoje = new Date();
@@ -53,7 +53,7 @@ const UsuariosController = {
                 return res.status(400).json({ error: erroValidacao });
             }
 
-            // ✅ 1. Cadastrar na tabela Login (REMOVIDO tipo_usuario)
+        
             const loginSql = `
                 INSERT INTO Login (nome, senha, cpf) VALUES (?, ?, ?)
             `;

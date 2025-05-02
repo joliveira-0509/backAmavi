@@ -1,9 +1,13 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+
+// Importações das rotas
 const usuariosRoutes = require('./routes/usuarios');
 const agendaRoutes = require('./routes/agendaEventoRoutes');
 const documentacaoRoutes = require('./routes/documentacao');
-const solicitacaoRoutes = require('./routes/solicitacaoAtendimento'); // ✅ nova importação
+const solicitacaoRoutes = require('./routes/solicitacaoAtendimento'); // Requerimentos
+const historicoRoutes = require('./routes//historicoAtendimentoRoutes'); // Histórico de atendimento
+
 const db = require('./db/db');
 
 const app = express();
@@ -11,11 +15,12 @@ const PORT = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 
-// Rotas
+// Rotas principais
 app.use('/api', usuariosRoutes);
 app.use('/api/agenda', agendaRoutes);
 app.use('/api/documentacao', documentacaoRoutes);
-app.use('/api/requerimentos', solicitacaoRoutes); // ✅ nova rota para requerimentos
+app.use('/api/requerimentos', solicitacaoRoutes); // Rota para solicitações de atendimento
+app.use('/api/historico', historicoRoutes); // Rota para histórico de atendimento
 
 // Rota padrão
 app.get('/', (req, res) => {
@@ -32,7 +37,7 @@ app.get('/', (req, res) => {
   }
 })();
 
-// Iniciar o servidor
+// Inicialização do servidor
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });

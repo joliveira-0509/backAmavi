@@ -26,5 +26,5 @@ router.get('/health', async (req, res) => {
 router.post('/usuarios', UsuariosController.cadastrarUsuario);
 router.get('/usuarios', UsuariosController.buscarUsuariosPorNome);
 router.delete('/usuarios/:id', validarId, UsuariosController.deletarUsuario);
-
+router.get('/usuarios/todos', UsuariosController.buscarTodosUsuarios);
 module.exports = router;

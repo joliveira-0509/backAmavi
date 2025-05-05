@@ -131,6 +131,22 @@ const UsuariosController = {
         }
     },
 
+    buscarTodosUsuarios: async (req, res) => {
+        try {
+            const sql = `SELECT * FROM Usuarios`;
+            const [rows] = await db.execute(sql);
+
+            if (rows.length === 0) {
+                return res.status(404).json({ error: 'Nenhum usuário encontrado.' });
+            }
+
+            return res.status(200).json(rows);
+        } catch (err) {
+            console.error('Erro ao buscar todos os usuários:', err);
+            return res.status(500).json({ error: 'Erro ao buscar todos os usuários.', details: err.message });
+        }
+    },
+
     deletarUsuario: async (req, res) => {
         try {
             const { id } = req.params;

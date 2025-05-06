@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const UsuariosController = require('../controllers/usuariosController');
-const db = require('../db/db'); // Importar a conexão com o banco de dados
+const db = require('../db/db'); 
 
 // Middleware para validação de ID
 function validarId(req, res, next) {

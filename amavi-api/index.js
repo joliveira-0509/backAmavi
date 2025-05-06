@@ -21,7 +21,7 @@ app.use('/api/documentacao', documentacaoRoutes);
 app.use('/api/requerimentos', solicitacaoRoutes);
 app.use('/api/historico', historicoRoutes);
 
-// 📘 Documentação Swagger
+
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
 // Rota padrão

@@ -55,6 +55,18 @@ const UsuariosModel = {
         }
     },
 
+    // Buscar usuário pelo CPF
+    buscarPorCpf: async (cpf) => {
+        try {
+            const sql = `SELECT * FROM Usuarios WHERE cpf = ?`;
+            const [result] = await db.execute(sql, [cpf]);
+            return result[0]; // Retorna o primeiro registro encontrado
+        } catch (err) {
+            console.error('Erro ao buscar usuário por CPF:', err);
+            throw err;
+        }
+    },
+
     // Deletar usuário pelo ID
     deletarUsuario: async (id) => {
         try {

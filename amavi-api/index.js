@@ -1,35 +1,58 @@
+require('dotenv/config');
 const express = require('express');
 const cors = require('cors');
-const usuariosRoutes = require('./routes/usuarios');
-const agendaRoutes = require('./routes/agendaEventoRoutes');
-const documentacaoRoutes = require('./routes/documentacao');
-const solicitacaoRoutes = require('./routes/solicitacaoAtendimento');
-const historicoRoutes = require('./routes/historicoAtendimentoRoutes');
-const { swaggerUi, specs } = require('./swagger'); 
-const db = require('./db/db');
-const rotasLogin = require('./routes/rotaslogin'); 
+const usuariosRoutes = require('./routes/usuarios.js');
+const agendaRoutes = require('./routes/agendaEventoRoutes.js');
+const documentacaoRoutes = require('./routes/documentacao.js');
+const solicitacaoRoutes = require('./routes/solicitacaoAtendimento.js');
+const historicoRoutes = require('./routes/historicoAtendimentoRoutes.js');
+const { swaggerUi, specs } = require('./swagger.js');
+const db = require('./db/db.js');
+const rotasLogin = require('./routes/rotaslogin.js');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+if (!process.env.PORT) {
+  console.error('A variável de ambiente PORT não está definida.');
+  process.exit(1);
+}
+
 // Middleware
-app.use(cors());
+const allowedOrigins = ['http://example.com', 'http://anotherdomain.com'];
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Origem não permitida pelo CORS'));
+    }
+  }
+}));
 app.use(express.json());
+
 // Rotas
 app.use('/api', usuariosRoutes);
 app.use('/api/agenda', agendaRoutes);
 app.use('/api/documentacao', documentacaoRoutes);
 app.use('/api/requerimentos', solicitacaoRoutes);
 app.use('/api/historico', historicoRoutes);
-app.use('/api/auth', rotasLogin); // Integrando as rotas de login
+app.use('/api/auth', rotasLogin);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
-// Rota padrão
 app.get('/', (req, res) => {
   res.send('API de Usuários em funcionamento!');
 });
+
 // Middleware de tratamento de erros
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ error: 'Erro interno do servidor.' });
+  if (err.status) {
+    res.status(err.status).json({ error: err.message });
+  } else {
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
 });
+
 // Verificação da conexão com o banco
 (async () => {
   try {
@@ -37,9 +60,11 @@ app.use((err, req, res, next) => {
     console.log('Conexão com o banco de dados está funcionando.');
   } catch (err) {
     console.error('Erro ao conectar ao banco de dados:', err.message);
+    process.exit(1); // Encerra o processo com erro
   }
 })();
+
 // Inicialização
 app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
+  console.log(`Servidor rodando na porta ${PORT} no ambiente ${process.env.NODE_ENV || 'desenvolvimento'}`);
 });

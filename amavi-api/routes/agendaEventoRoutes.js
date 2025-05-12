@@ -1,7 +1,8 @@
 // routes/agendaRoutes.js
 const express = require('express');
+const AgendaEventoController = require('../controllers/agendaEventoController.js');
+
 const router = express.Router();
-const AgendaEventoController = require('../controllers/agendaEventoController');
 
 // Essas rotas agora são relativas a /api/agenda
 router.post('/', AgendaEventoController.cadastrar);

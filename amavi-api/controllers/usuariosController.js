@@ -1,3 +1,4 @@
+const bcrypt = require('bcrypt');
 const UsuariosModel = require('../models/usuariosModel');
 const db = require('../db/db'); 
 
@@ -53,13 +54,16 @@ const UsuariosController = {
                 return res.status(400).json({ error: erroValidacao });
             }
 
-        
+            // Criptografar a senha antes de salvar
+            const senhaCriptografada = await bcrypt.hash(usuario.senha, 10);
+
+            // 1. Cadastrar na tabela Login
             const loginSql = `
                 INSERT INTO Login (nome, senha, cpf) VALUES (?, ?, ?)
             `;
             const [loginResult] = await conn.execute(loginSql, [
                 usuario.nome,
-                usuario.senha,
+                senhaCriptografada,
                 usuario.cpf
             ]);
 

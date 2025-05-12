@@ -72,3 +72,36 @@ exports.logout = (req, res) => {
     res.clearCookie('token');
     res.status(200).json({ message: 'Logout realizado com sucesso.' });
 };
+exports.atualizarSenha = async (req, res) => {
+    const { senha_atual, nova_senha } = req.body;
+    const token = req.cookies.token;
+
+    if (!token) {
+        return res.status(401).json({ error: 'Token não fornecido.' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, SECRET_KEY);
+        const usuarioLogin = await LoginModel.buscarPorCpf(decoded.cpf);
+
+        if (!usuarioLogin) {
+            return res.status(404).json({ error: 'Usuário não encontrado.' });
+        }
+
+        const senhaCorreta = await bcrypt.compare(senha_atual, usuarioLogin.senha);
+        if (!senhaCorreta) {
+            return res.status(401).json({ error: 'Senha atual incorreta.' });
+        }
+
+        const senhaCriptografada = await bcrypt.hash(nova_senha, 10);
+
+        const sql = `UPDATE Login SET senha = ? WHERE cpf = ?`;
+        await db.execute(sql, [senhaCriptografada, decoded.cpf]);
+
+        return res.status(200).json({ message: 'Senha atualizada com sucesso.' });
+
+    } catch (err) {
+        console.error('Erro ao atualizar senha:', err);
+        return res.status(500).json({ error: 'Erro interno ao atualizar senha.' });
+    }
+};

@@ -1,39 +1,38 @@
-import { DataTypes } from 'sequelize';
-import sequelize from '../config/db.js';
+const db = require('../db/db');
 
-const Colaborador = sequelize.define('Colaborador', {
-  id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true
-  },
-  nome: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  cargo: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  email: {
-    type: DataTypes.STRING,
-    allowNull: true
-  },
-  telefone: {
-    type: DataTypes.STRING(20),
-    allowNull: true
-  },
-  foto_url: {
-    type: DataTypes.STRING(500),
-    allowNull: true
-  },
-  criado_em: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW
-  }
-}, {
-  tableName: 'colaborador',
-  timestamps: false
-});
+const ColaboradorModel = {
+    // Cadastrar novo colaborador
+    async cadastrar(nome, cargo, email, telefone, foto_url) {
+        const sql = `INSERT INTO Colaborador (nome, cargo, email, telefone, foto_url) VALUES (?, ?, ?, ?, ?)`;
+        const [result] = await db.execute(sql, [nome, cargo, email, telefone, foto_url]);
+        return result.insertId;
+    },
 
-export default Colaborador;
+    // Buscar todos os colaboradores
+    async listarTodos() {
+        const sql = `SELECT * FROM Colaborador`;
+        const [rows] = await db.execute(sql);
+        return rows;
+    },
+
+    // Buscar colaborador por ID
+    async buscarPorId(id) {
+        const sql = `SELECT * FROM Colaborador WHERE id = ?`;
+        const [rows] = await db.execute(sql, [id]);
+        return rows[0] || null;
+    },
+
+    // Atualizar colaborador
+    async atualizar(id, nome, cargo, email, telefone, foto_url) {
+        const sql = `UPDATE Colaborador SET nome = ?, cargo = ?, email = ?, telefone = ?, foto_url = ? WHERE id = ?`;
+        await db.execute(sql, [nome, cargo, email, telefone, foto_url, id]);
+    },
+
+    // Deletar colaborador
+    async deletar(id) {
+        const sql = `DELETE FROM Colaborador WHERE id = ?`;
+        await db.execute(sql, [id]);
+    }
+};
+
+module.exports = ColaboradorModel;

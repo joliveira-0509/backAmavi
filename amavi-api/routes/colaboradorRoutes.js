@@ -1,12 +1,12 @@
-import express from 'express';
-import {
+const express = require('express');
+const {
   listarColaboradores,
   buscarColaboradorPorId,
   cadastrarColaborador,
   atualizarColaborador,
   editarParcialColaborador,
   deletarColaborador
-} from '../controllers/colaboradorController.js';
+} = require('../controllers/colaboradorController.js');
 
 const router = express.Router();
 
@@ -17,5 +17,4 @@ router.put('/colaboradores/:id', atualizarColaborador);
 router.patch('/colaboradores/:id', editarParcialColaborador);
 router.delete('/colaboradores/:id', deletarColaborador);
 
-export default router;
- 
+module.exports = router;

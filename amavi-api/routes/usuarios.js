@@ -22,10 +22,10 @@ router.get('/health', async (req, res) => {
     }
 });
 
-router.post('/cadastrar', UsuariosController.cadastrarUsuario);
-router.get('/busca', UsuariosController.buscarUsuariosPorNome);
-router.delete('/busca/:id', validarId, UsuariosController.deletarUsuario);
-router.get('/buscatodos', UsuariosController.buscarTodosUsuarios);
+router.post('/Usuarios', UsuariosController.cadastrarUsuario);
+router.get('/Usuarios', UsuariosController.buscarUsuariosPorNome);
+router.delete('/Usuarios/:id', validarId, UsuariosController.deletarUsuario);
+router.get('/Usuarios', UsuariosController.buscarTodosUsuarios);
 router.put('/atualizar/:id', validarId, UsuariosController.atualizarUsuario);
 router.patch('/atualizar/:id', validarId, UsuariosController.atualizarUsuarioParcial);
 

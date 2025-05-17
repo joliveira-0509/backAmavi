@@ -1,4 +1,4 @@
-const ColaboradorModel = require('../models/ColaboradorModel');
+const ColaboradorModel = require('../models/Colaborador');
 
 // Listar todos os colaboradores
 const listarColaboradores = async (req, res) => {

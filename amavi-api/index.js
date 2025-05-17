@@ -1,6 +1,8 @@
-
 const express = require('express');
 const cors = require('cors');
+
+// ✅ IMPORTAÇÃO DO SWAGGER
+const setupSwagger = require('./swagger'); // <- Adiciona essa linha
 
 const usuariosRoutes = require('./routes/usuarios');
 const agendaRoutes = require('./routes/agendaEventoRoutes');
@@ -23,6 +25,10 @@ if (!process.env.PORT) {
 app.use(cors());
 app.use(express.json());
 
+// ✅ INICIALIZA O SWAGGER ANTES DAS ROTAS
+setupSwagger(app); // <- Aqui ativamos o Swagger na rota /api-docs
+
+// Suas rotas da API
 app.use('/api', usuariosRoutes);
 app.use('/api/colaborador', colaboradorRoutes);
 app.use('/api/agenda', agendaRoutes);
@@ -32,15 +38,18 @@ app.use('/api/historico', historicoRoutes);
 app.use('/api/auth', rotasLogin);
 app.use('/api/evento', eventoRoutes);
 
+// Teste básico de rota
 app.get('/', (req, res) => {
   res.send('API de Usuários em funcionamento!');
 });
 
+// Middleware de erro
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(err.status || 500).json({ error: err.message || 'Erro interno do servidor.' });
 });
 
+// Teste de conexão com banco
 (async () => {
   try {
     await db.query('SELECT 1');
@@ -51,6 +60,7 @@ app.use((err, req, res, next) => {
   }
 })();
 
+// Inicializa o servidor
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });

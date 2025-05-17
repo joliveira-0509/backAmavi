@@ -6,18 +6,22 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'Documentação da API AMAVI',
+      title: 'API AMAVI',
       version: '1.0.0',
-      description: 'Documentação da API com Swagger UI',
+      description: 'Documentação da API',
     },
     servers: [
       {
         url: 'https://amaviapi.dev.vilhena.ifro.edu.br',
-        description: 'Servidor de produção',
+        description: 'Servidor de Produção',
+      },
+      {
+        url: 'http://localhost:3000',
+        description: 'Servidor Local',
       },
     ],
   },
-  apis: ['./routes/*.js'], // caminho dos arquivos de rotas
+  apis: ['./routes/*.js'], // caminho para seus arquivos de rotas com comentários Swagger
 };
 
 const swaggerSpec = swaggerJsdoc(options);

@@ -3,7 +3,7 @@ const SolicitacaoAtendimentoModel = require('../models/solicitacaoAtendimentoMod
 const SolicitacaoAtendimentoController = {
     cadastrar: async (req, res) => {
         try {
-            const { id_usuario, descricao, classificacao } = req.body;
+            const { id_usuario, descricao, classificacao, id_documentacao } = req.body;
 
             if (!id_usuario || !descricao || !classificacao) {
                 return res.status(400).json({ error: 'Campos obrigatórios: id_usuario, descricao, classificacao.' });
@@ -12,7 +12,8 @@ const SolicitacaoAtendimentoController = {
             const id = await SolicitacaoAtendimentoModel.cadastrar({
                 id_usuario,
                 descricao,
-                classificacao
+                classificacao,
+                id_documentacao // novo campo
             });
 
             res.status(201).json({ message: 'Solicitação cadastrada com sucesso!', id });

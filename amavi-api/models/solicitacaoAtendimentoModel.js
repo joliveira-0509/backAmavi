@@ -5,13 +5,14 @@ const SolicitacaoAtendimentoModel = {
     cadastrar: async (dados) => {
         const sql = `
             INSERT INTO SolicitacaoAtendimento (
-                id_usuario, descricao, classificacao
-            ) VALUES (?, ?, ?)
+                id_usuario, descricao, classificacao, id_documentacao
+            ) VALUES (?, ?, ?, ?)
         `;
         const [result] = await db.execute(sql, [
             dados.id_usuario,
             dados.descricao,
-            dados.classificacao
+            dados.classificacao,
+            dados.id_documentacao || null // aceita null se não enviado
         ]);
         return result.insertId;
     },

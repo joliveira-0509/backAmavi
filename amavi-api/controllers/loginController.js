@@ -131,3 +131,29 @@ exports.cadastrarAdm = async (req, res) => {
         res.status(500).json({ error: 'Erro interno ao cadastrar administrador.' });
     }
 };
+
+exports.deletarAdm = async (req, res) => {
+    const { cpf } = req.params;
+
+    if (!cpf) {
+        return res.status(400).json({ error: 'CPF é obrigatório.' });
+    }
+
+    if (!validateCPF(cpf)) {
+        return res.status(400).json({ error: 'CPF inválido.' });
+    }
+
+    try {
+        const usuario = await LoginModel.buscarPorCpf(cpf);
+        if (!usuario || usuario.tipo_usuario !== 'Adm') {
+            return res.status(404).json({ error: 'Administrador não encontrado.' });
+        }
+
+        await LoginModel.deletarPorCpf(cpf);
+
+        res.status(200).json({ message: 'Administrador deletado com sucesso.' });
+    } catch (err) {
+        console.error('Erro ao deletar administrador:', err);
+        res.status(500).json({ error: 'Erro interno ao deletar administrador.' });
+    }
+};

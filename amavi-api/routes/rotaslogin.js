@@ -14,4 +14,7 @@ router.put('/atualizarsenha', loginController.atualizarSenha);
 // Rota para cadastro de administrador
 router.post('/cadastrar-adm', loginController.cadastrarAdm);
 
+// Rota para deletar administrador
+router.delete('/deletar-adm/:cpf', loginController.deletarAdm);
+
 module.exports = router;

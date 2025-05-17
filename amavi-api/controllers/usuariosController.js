@@ -43,31 +43,30 @@ const UsuariosController = {
     cadastrarUsuario: async (req, res) => {
         const conn = await db.getConnection();
         try {
+            const usuario = req.body;
+
+            if (!usuario.senha || !usuario.nome || !usuario.cpf) {
+                return res.status(400).json({ error: 'Campos obrigatórios (nome, cpf, senha) não informados.' });
+            }
+
             await conn.beginTransaction();
 
-            const usuario = req.body;
             const tipo_usuario = (usuario.tipo_usuario || 'responsavel').toLowerCase().trim();
-
             const idade = calcularIdade(usuario.data_nascimento);
             const erroValidacao = validarTipoUsuario(tipo_usuario, idade, usuario.id_responsavel);
             if (erroValidacao) {
+                await conn.rollback();
+                conn.release();
                 return res.status(400).json({ error: erroValidacao });
             }
 
-            // Criptografar a senha antes de salvar
             const senhaCriptografada = await bcrypt.hash(usuario.senha, 10);
 
-            // 1. Cadastrar na tabela Login
-            const loginSql = `
-                INSERT INTO Login (nome, senha, cpf) VALUES (?, ?, ?)
-            `;
-            await conn.execute(loginSql, [
-                usuario.nome,
-                senhaCriptografada,
-                usuario.cpf
-            ]);
+            // Login
+            const loginSql = `INSERT INTO Login (nome, senha, cpf) VALUES (?, ?, ?)`;
+            await conn.execute(loginSql, [usuario.nome, senhaCriptografada, usuario.cpf]);
 
-            // 2. Cadastrar na tabela Usuarios
+            // Usuarios
             const usuarioSql = `
                 INSERT INTO Usuarios (
                     nome, cpf, rg, endereco, email, num_sus, bp_tratamento,
@@ -77,24 +76,22 @@ const UsuariosController = {
             const [usuarioResult] = await conn.execute(usuarioSql, [
                 usuario.nome,
                 usuario.cpf,
-                usuario.rg,
-                usuario.endereco,
-                usuario.email,
-                usuario.num_sus,
-                usuario.bp_tratamento,
-                usuario.bp_acompanhamento,
+                usuario.rg || null,
+                usuario.endereco || null,
+                usuario.email || null,
+                usuario.num_sus || null,
+                usuario.bp_tratamento || null,
+                usuario.bp_acompanhamento || null,
                 tipo_usuario,
                 usuario.id_responsavel || null,
                 usuario.data_nascimento,
-                usuario.foto_url
+                usuario.foto_url || null
             ]);
 
             const id_usuario = usuarioResult.insertId;
 
-            // 3. Registrar evento
-            const eventoSql = `
-                INSERT INTO EventoUsuario (id_usuario, tipo_evento) VALUES (?, ?)
-            `;
+            // Evento
+            const eventoSql = `INSERT INTO EventoUsuario (id_usuario, tipo_evento) VALUES (?, ?)`;
             await conn.execute(eventoSql, [id_usuario, 'cadastro']);
 
             await conn.commit();

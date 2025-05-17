@@ -1,4 +1,4 @@
-const db = require('../db/db'); // Arquivo de configuração de banco de dados
+const db = require('../db/db');
 
 // Listar todos os colaboradores
 const listarColaboradores = async (req, res) => {
@@ -45,7 +45,7 @@ const cadastrarColaborador = async (req, res) => {
   }
 };
 
-// Atualizar colaborador
+// Atualizar colaborador (PUT)
 const atualizarColaborador = async (req, res) => {
   try {
     const { id } = req.params;
@@ -80,8 +80,17 @@ const editarParcialColaborador = async (req, res) => {
       return res.status(404).json({ erro: 'Colaborador não encontrado.' });
     }
 
-    const updateSql = 'UPDATE Colaborador SET ? WHERE id = ?';
-    await db.execute(updateSql, [dados, id]);
+    const campos = Object.keys(dados);
+    const valores = Object.values(dados);
+
+    if (campos.length === 0) {
+      return res.status(400).json({ erro: 'Nenhum campo para atualizar.' });
+    }
+
+    const setString = campos.map(campo => `${campo} = ?`).join(', ');
+    const updateSql = `UPDATE Colaborador SET ${setString} WHERE id = ?`;
+
+    await db.execute(updateSql, [...valores, id]);
 
     res.status(200).json({ mensagem: 'Colaborador atualizado parcialmente com sucesso.' });
   } catch (error) {

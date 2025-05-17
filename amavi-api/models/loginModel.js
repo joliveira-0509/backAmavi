@@ -12,20 +12,20 @@ const LoginModel = {
         }
     },
 
-    criarLogin: async (login) => {
-        try {
-            const sql = `
-                INSERT INTO Login (cpf, senha, tipo_usuario) 
-                VALUES (?, ?, ?)
-            `;
-            const params = [login.cpf, login.senha, login.tipo_usuario || 'usuario'];
-            const [result] = await db.execute(sql, params);
-            return result;
-        } catch (err) {
-            console.error('Erro ao criar login:', err);
-            throw err;
-        }
-    },
+   criarLogin: async (login) => {
+    try {
+        const sql = `
+            INSERT INTO Login (cpf, senha, tipo_usuario, nome) 
+            VALUES (?, ?, ?, ?)
+        `;
+        const params = [login.cpf, login.senha, login.tipo_usuario || 'usuario', login.nome || null];
+        const [result] = await db.execute(sql, params);
+        return result;
+    } catch (err) {
+        console.error('Erro ao criar login:', err);
+        throw err;
+    }
+},
 
     deletarLogin: async (id) => {
         try {

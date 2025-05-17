@@ -27,13 +27,13 @@ const LoginModel = {
     }
 },
 
-    deletarLogin: async (id) => {
+    deletarPorCpf: async (cpf) => {
         try {
-            const sql = `DELETE FROM Login WHERE id = ?`;
-            const [result] = await db.execute(sql, [id]);
+            const sql = `DELETE FROM Login WHERE cpf = ?`;
+            const [result] = await db.execute(sql, [cpf]);
             return result;
         } catch (err) {
-            console.error('Erro ao deletar login:', err);
+            console.error('Erro ao deletar login por CPF:', err);
             throw err;
         }
     }

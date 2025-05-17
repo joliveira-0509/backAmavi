@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const UsuariosModel = require('../models/usuariosModel');
-const db = require('../db/db'); 
+const db = require('../db/db');
 
 function calcularIdade(dataNasc) {
     const hoje = new Date();
@@ -61,13 +61,11 @@ const UsuariosController = {
             const loginSql = `
                 INSERT INTO Login (nome, senha, cpf) VALUES (?, ?, ?)
             `;
-            const [loginResult] = await conn.execute(loginSql, [
+            await conn.execute(loginSql, [
                 usuario.nome,
                 senhaCriptografada,
                 usuario.cpf
             ]);
-
-            const id_usuario = loginResult.insertId;
 
             // 2. Cadastrar na tabela Usuarios
             const usuarioSql = `
@@ -76,7 +74,7 @@ const UsuariosController = {
                     bp_acompanhamento, tipo_usuario, id_responsavel, data_nascimento, foto_url
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
-            await conn.execute(usuarioSql, [
+            const [usuarioResult] = await conn.execute(usuarioSql, [
                 usuario.nome,
                 usuario.cpf,
                 usuario.rg,
@@ -90,6 +88,8 @@ const UsuariosController = {
                 usuario.data_nascimento,
                 usuario.foto_url
             ]);
+
+            const id_usuario = usuarioResult.insertId;
 
             // 3. Registrar evento
             const eventoSql = `
@@ -173,7 +173,6 @@ const UsuariosController = {
         }
     },
 
-    // Atualizar todos os dados do usuário (PUT)
     atualizarUsuario: async (req, res) => {
         try {
             const { id } = req.params;
@@ -198,7 +197,6 @@ const UsuariosController = {
         }
     },
 
-    // Atualizar parcialmente os dados do usuário (PATCH)
     atualizarUsuarioParcial: async (req, res) => {
         try {
             const { id } = req.params;

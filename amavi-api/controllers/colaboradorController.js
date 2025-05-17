@@ -66,25 +66,34 @@ const atualizarColaborador = async (req, res) => {
     res.status(500).json({ erro: 'Erro ao atualizar colaborador.', detalhes: error.message });
   }
 };
-
-// Atualização parcial (PATCH)
 const editarParcialColaborador = async (req, res) => {
   try {
     const { id } = req.params;
     const dados = req.body;
 
-    const sql = 'SELECT * FROM Colaborador WHERE id = ?';
-    const [rows] = await db.execute(sql, [id]);
+    // Verifica se colaborador existe
+    const sqlBusca = 'SELECT * FROM Colaborador WHERE id = ?';
+    const [rows] = await db.execute(sqlBusca, [id]);
 
     if (rows.length === 0) {
       return res.status(404).json({ erro: 'Colaborador não encontrado.' });
     }
 
-    const campos = Object.keys(dados);
-    const valores = Object.values(dados);
+    // Filtra só campos que existem na tabela e que não são undefined ou null
+    const camposValidos = ['nome', 'cargo', 'email', 'telefone', 'foto_url'];
+    const dadosFiltrados = {};
+
+    for (const campo of camposValidos) {
+      if (dados[campo] !== undefined && dados[campo] !== null) {
+        dadosFiltrados[campo] = dados[campo];
+      }
+    }
+
+    const campos = Object.keys(dadosFiltrados);
+    const valores = Object.values(dadosFiltrados);
 
     if (campos.length === 0) {
-      return res.status(400).json({ erro: 'Nenhum campo para atualizar.' });
+      return res.status(400).json({ erro: 'Nenhum campo válido para atualizar.' });
     }
 
     const setString = campos.map(campo => `${campo} = ?`).join(', ');

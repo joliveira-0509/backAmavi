@@ -1,11 +1,10 @@
-const db = require('../db/db');
+const ColaboradorModel = require('../models/ColaboradorModel');
 
 // Listar todos os colaboradores
 const listarColaboradores = async (req, res) => {
   try {
-    const sql = 'SELECT * FROM Colaborador';
-    const [rows] = await db.execute(sql);
-    res.status(200).json(rows);
+    const colaboradores = await ColaboradorModel.listarTodos();
+    res.status(200).json(colaboradores);
   } catch (error) {
     res.status(500).json({ erro: 'Erro ao listar colaboradores.', detalhes: error.message });
   }
@@ -15,14 +14,13 @@ const listarColaboradores = async (req, res) => {
 const buscarColaboradorPorId = async (req, res) => {
   try {
     const { id } = req.params;
-    const sql = 'SELECT * FROM Colaborador WHERE id = ?';
-    const [rows] = await db.execute(sql, [id]);
+    const colaborador = await ColaboradorModel.buscarPorId(id);
 
-    if (rows.length === 0) {
+    if (!colaborador) {
       return res.status(404).json({ erro: 'Colaborador não encontrado.' });
     }
 
-    res.status(200).json(rows[0]);
+    res.status(200).json(colaborador);
   } catch (error) {
     res.status(500).json({ erro: 'Erro ao buscar colaborador.', detalhes: error.message });
   }
@@ -37,47 +35,43 @@ const cadastrarColaborador = async (req, res) => {
       return res.status(400).json({ erro: 'Nome e cargo são obrigatórios.' });
     }
 
-    const sql = 'INSERT INTO Colaborador (nome, cargo, email, telefone, foto_url) VALUES (?, ?, ?, ?, ?)';
-    const [result] = await db.execute(sql, [nome, cargo, email, telefone, foto_url]);
-    res.status(201).json({ mensagem: 'Colaborador cadastrado com sucesso!', id: result.insertId });
+    const insertId = await ColaboradorModel.cadastrar(nome, cargo, email, telefone, foto_url);
+    res.status(201).json({ mensagem: 'Colaborador cadastrado com sucesso!', id: insertId });
   } catch (error) {
     res.status(500).json({ erro: 'Erro ao cadastrar colaborador.', detalhes: error.message });
   }
 };
 
-// Atualizar colaborador (PUT)
+// Atualizar colaborador (PUT - atualização completa)
 const atualizarColaborador = async (req, res) => {
   try {
     const { id } = req.params;
     const { nome, cargo, email, telefone, foto_url } = req.body;
 
-    const sql = 'SELECT * FROM Colaborador WHERE id = ?';
-    const [rows] = await db.execute(sql, [id]);
-
-    if (rows.length === 0) {
+    const colaboradorExistente = await ColaboradorModel.buscarPorId(id);
+    if (!colaboradorExistente) {
       return res.status(404).json({ erro: 'Colaborador não encontrado.' });
     }
 
-    const updateSql = 'UPDATE Colaborador SET nome = ?, cargo = ?, email = ?, telefone = ?, foto_url = ? WHERE id = ?';
-    await db.execute(updateSql, [nome, cargo, email, telefone, foto_url, id]);
+    await ColaboradorModel.atualizar(id, nome, cargo, email, telefone, foto_url);
 
     res.status(200).json({ mensagem: 'Colaborador atualizado com sucesso.' });
   } catch (error) {
     res.status(500).json({ erro: 'Erro ao atualizar colaborador.', detalhes: error.message });
   }
 };
+
+// Atualizar colaborador parcialmente (PATCH)
 const editarParcialColaborador = async (req, res) => {
   try {
     const { id } = req.params;
     const dados = req.body;
 
-    // Verifica se colaborador existe
     const colaboradorExistente = await ColaboradorModel.buscarPorId(id);
     if (!colaboradorExistente) {
       return res.status(404).json({ erro: 'Colaborador não encontrado.' });
     }
 
-    // Atualiza parcialmente com o método correto do model
     await ColaboradorModel.atualizarParcial(id, dados);
 
     res.status(200).json({ mensagem: 'Colaborador atualizado parcialmente com sucesso.' });
@@ -86,21 +80,17 @@ const editarParcialColaborador = async (req, res) => {
   }
 };
 
-
 // Deletar colaborador
 const deletarColaborador = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const sql = 'SELECT * FROM Colaborador WHERE id = ?';
-    const [rows] = await db.execute(sql, [id]);
-
-    if (rows.length === 0) {
+    const colaboradorExistente = await ColaboradorModel.buscarPorId(id);
+    if (!colaboradorExistente) {
       return res.status(404).json({ erro: 'Colaborador não encontrado.' });
     }
 
-    const deleteSql = 'DELETE FROM Colaborador WHERE id = ?';
-    await db.execute(deleteSql, [id]);
+    await ColaboradorModel.deletar(id);
 
     res.status(200).json({ mensagem: 'Colaborador excluído com sucesso.' });
   } catch (error) {

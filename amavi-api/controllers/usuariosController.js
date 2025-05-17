@@ -173,6 +173,56 @@ const UsuariosController = {
         }
     },
 
+    // Atualizar todos os dados do usuário (PUT)
+    atualizarUsuario: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const usuario = req.body;
+
+            if (!id) {
+                return res.status(400).json({ error: 'ID do usuário é obrigatório.' });
+            }
+
+            const usuarioExistente = await UsuariosModel.buscarPorId(id);
+            if (!usuarioExistente) {
+                return res.status(404).json({ error: 'Usuário não encontrado.' });
+            }
+
+            await UsuariosModel.putUsuario(id, usuario);
+            await UsuariosModel.registrarEvento(id, 'atualizacao');
+
+            return res.status(200).json({ message: 'Usuário atualizado com sucesso!' });
+        } catch (err) {
+            console.error('Erro ao atualizar usuário (PUT):', err);
+            return res.status(500).json({ error: 'Erro ao atualizar usuário.', details: err.message });
+        }
+    },
+
+    // Atualizar parcialmente os dados do usuário (PATCH)
+    atualizarUsuarioParcial: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const campos = req.body;
+
+            if (!id) {
+                return res.status(400).json({ error: 'ID do usuário é obrigatório.' });
+            }
+
+            const usuarioExistente = await UsuariosModel.buscarPorId(id);
+            if (!usuarioExistente) {
+                return res.status(404).json({ error: 'Usuário não encontrado.' });
+            }
+
+            await UsuariosModel.patchUsuario(id, campos);
+            await UsuariosModel.registrarEvento(id, 'atualizacao_parcial');
+
+            return res.status(200).json({ message: 'Usuário atualizado parcialmente com sucesso!' });
+        } catch (err) {
+            console.error('Erro ao atualizar usuário (PATCH):', err);
+            return res.status(500).json({ error: 'Erro ao atualizar usuário parcialmente.', details: err.message });
+        }
+    },
+
     buscarPorId: async (id) => {
         try {
             const sql = `SELECT * FROM Usuarios WHERE id = ?`;

@@ -78,6 +78,68 @@ const UsuariosModel = {
             throw err;
         }
     },
+    putUsuario: async (id, usuario) => {
+        try {
+            const sql = `
+                UPDATE Usuarios SET
+                    nome = ?,
+                    cpf = ?,
+                    rg = ?,
+                    endereco = ?,
+                    email = ?,
+                    num_sus = ?,
+                    bp_tratamento = ?,
+                    bp_acompanhamento = ?,
+                    tipo_usuario = ?,
+                    id_responsavel = ?,
+                    data_nascimento = ?,
+                    foto_url = ?
+                WHERE id = ?
+            `;
+            const params = [
+                usuario.nome,
+                usuario.cpf,
+                usuario.rg,
+                usuario.endereco,
+                usuario.email,
+                usuario.num_sus,
+                usuario.bp_tratamento,
+                usuario.bp_acompanhamento,
+                usuario.tipo_usuario,
+                usuario.id_responsavel,
+                usuario.data_nascimento,
+                usuario.foto_url,
+                id
+            ];
+            const [result] = await db.execute(sql, params);
+            return result;
+        } catch (err) {
+            console.error('Erro ao atualizar usuário (PUT):', err);
+            throw err;
+        }
+    },
+
+    // Atualizar parcialmente os dados do usuário (PATCH)
+    patchUsuario: async (id, campos) => {
+        try {
+            const keys = Object.keys(campos);
+            const values = Object.values(campos);
+
+            if (keys.length === 0) {
+                throw new Error('Nenhum campo para atualizar.');
+            }
+
+            const setClause = keys.map(key => `${key} = ?`).join(', ');
+            const sql = `UPDATE Usuarios SET ${setClause} WHERE id = ?`;
+            values.push(id);
+
+            const [result] = await db.execute(sql, values);
+            return result;
+        } catch (err) {
+            console.error('Erro ao atualizar usuário (PATCH):', err);
+            throw err;
+        }
+    },
 
     // Registrar evento (ex.: cadastro, exclusão)
     registrarEvento: async (id_usuario, tipo_evento) => {

@@ -8,15 +8,16 @@ const options = {
     info: {
       title: 'Documentação da API AMAVI',
       version: '1.0.0',
-      description: 'Esta é a documentação automática da sua API.',
+      description: 'Documentação da API com Swagger UI',
     },
     servers: [
       {
-        url: 'https://amaviapi.dev.vilhena.ifro.edu.br', // seu domínio
+        url: 'https://amaviapi.dev.vilhena.ifro.edu.br',
+        description: 'Servidor de produção',
       },
     ],
   },
-  apis: ['./routes/*.js'], // Caminho para os arquivos de rotas
+  apis: ['./routes/*.js'], // caminho dos arquivos de rotas
 };
 
 const swaggerSpec = swaggerJsdoc(options);

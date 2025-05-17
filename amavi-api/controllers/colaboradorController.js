@@ -72,40 +72,20 @@ const editarParcialColaborador = async (req, res) => {
     const dados = req.body;
 
     // Verifica se colaborador existe
-    const sqlBusca = 'SELECT * FROM Colaborador WHERE id = ?';
-    const [rows] = await db.execute(sqlBusca, [id]);
-
-    if (rows.length === 0) {
+    const colaboradorExistente = await ColaboradorModel.buscarPorId(id);
+    if (!colaboradorExistente) {
       return res.status(404).json({ erro: 'Colaborador não encontrado.' });
     }
 
-    // Filtra só campos que existem na tabela e que não são undefined ou null
-    const camposValidos = ['nome', 'cargo', 'email', 'telefone', 'foto_url'];
-    const dadosFiltrados = {};
-
-    for (const campo of camposValidos) {
-      if (dados[campo] !== undefined && dados[campo] !== null) {
-        dadosFiltrados[campo] = dados[campo];
-      }
-    }
-
-    const campos = Object.keys(dadosFiltrados);
-    const valores = Object.values(dadosFiltrados);
-
-    if (campos.length === 0) {
-      return res.status(400).json({ erro: 'Nenhum campo válido para atualizar.' });
-    }
-
-    const setString = campos.map(campo => `${campo} = ?`).join(', ');
-    const updateSql = `UPDATE Colaborador SET ${setString} WHERE id = ?`;
-
-    await db.execute(updateSql, [...valores, id]);
+    // Atualiza parcialmente com o método correto do model
+    await ColaboradorModel.atualizarParcial(id, dados);
 
     res.status(200).json({ mensagem: 'Colaborador atualizado parcialmente com sucesso.' });
   } catch (error) {
     res.status(500).json({ erro: 'Erro ao editar colaborador.', detalhes: error.message });
   }
 };
+
 
 // Deletar colaborador
 const deletarColaborador = async (req, res) => {

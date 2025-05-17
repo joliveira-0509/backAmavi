@@ -2,7 +2,7 @@
 
 const jwt = require('jsonwebtoken');
 const db = require('../db/db');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs'); // alterado para bcryptjs
 const LoginModel = require('../models/loginModel');
 const SECRET_KEY = process.env.SECRET_KEY || 'sua_chave_secreta';
 
@@ -33,7 +33,8 @@ exports.login = async (req, res) => {
         const usuarioLogin = await LoginModel.buscarPorCpf(cpf);
         if (!usuarioLogin) return res.status(401).json({ message: 'Usuário não encontrado.' });
 
-        const senhaValida = await bcrypt.compare(senha, usuarioLogin.senha);
+        // comparar senha (versão síncrona)
+        const senhaValida = bcrypt.compareSync(senha, usuarioLogin.senha);
         if (!senhaValida) return res.status(401).json({ message: 'Senha incorreta.' });
 
         const token = jwt.sign(
@@ -81,10 +82,14 @@ exports.atualizarSenha = async (req, res) => {
 
         if (!usuarioLogin) return res.status(404).json({ error: 'Usuário não encontrado.' });
 
-        const senhaCorreta = await bcrypt.compare(senha_atual, usuarioLogin.senha);
+        // comparar senha atual (síncrono)
+        const senhaCorreta = bcrypt.compareSync(senha_atual, usuarioLogin.senha);
         if (!senhaCorreta) return res.status(401).json({ error: 'Senha atual incorreta.' });
 
-        const senhaCriptografada = await bcrypt.hash(nova_senha, 10);
+        // hash nova senha (síncrono)
+        const salt = bcrypt.genSaltSync(10);
+        const senhaCriptografada = bcrypt.hashSync(nova_senha, salt);
+
         const sql = `UPDATE Login SET senha = ? WHERE cpf = ?`;
         await db.execute(sql, [senhaCriptografada, decoded.cpf]);
 
@@ -95,33 +100,29 @@ exports.atualizarSenha = async (req, res) => {
         res.status(500).json({ error: 'Erro interno ao atualizar senha.' });
     }
 };
+
 exports.cadastrarAdm = async (req, res) => {
     const { cpf, senha, nome } = req.body;
 
-    // Verifica se os campos obrigatórios foram fornecidos
     if (!cpf || !senha || !nome) {
         return res.status(400).json({ error: 'CPF, senha e nome são obrigatórios.' });
     }
 
-    // Valida o CPF
     if (!validateCPF(cpf)) {
         return res.status(400).json({ error: 'CPF inválido.' });
     }
 
     try {
-        // Verifica se o CPF já existe
         const usuarioExistente = await LoginModel.buscarPorCpf(cpf);
         if (usuarioExistente) {
             return res.status(400).json({ error: 'Este CPF já está cadastrado.' });
         }
 
-        // Criptografa a senha
-        const senhaCriptografada = await bcrypt.hash(senha, 10);
+        const salt = bcrypt.genSaltSync(10);
+        const senhaCriptografada = bcrypt.hashSync(senha, salt);
 
-        // Cria o objeto com as informações do administrador
         const novoAdm = { cpf, senha: senhaCriptografada, tipo_usuario: 'Adm', nome };
 
-        // Cadastra o novo administrador no banco de dados
         const adminCriado = await LoginModel.criarLogin(novoAdm);
 
         res.status(201).json({ message: 'Administrador cadastrado com sucesso!', admin: adminCriado });

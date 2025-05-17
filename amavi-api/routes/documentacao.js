@@ -6,7 +6,7 @@ const DocumentacaoController = require('../controllers/documentacaoController');
 router.post('/', DocumentacaoController.cadastrar);
 
 // GET /api/documentacao
-router.get('/documentacao', DocumentacaoController.listarTodas);
+router.get('/', DocumentacaoController.listarTodas);
 
 // GET /api/documentacao/:id
 router.get('/:id', DocumentacaoController.buscarPorId);

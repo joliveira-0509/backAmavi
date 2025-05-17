@@ -2,9 +2,9 @@ const db = require('../db/db');
 
 const DocumentacaoModel = {
     // Cadastrar nova documentação
-    async cadastrar(id_usuario, inscricao) {
-        const sql = `INSERT INTO Documentacao (id_usuario, inscricao) VALUES (?, ?)`;
-        const [result] = await db.execute(sql, [id_usuario, inscricao]);
+    async cadastrar(id_usuario, inscricao, arquivo_url = null) {
+        const sql = `INSERT INTO Documentacao (id_usuario, inscricao, arquivo_url) VALUES (?, ?, ?)`;
+        const [result] = await db.execute(sql, [id_usuario, inscricao, arquivo_url]);
         return result.insertId;
     },
 
@@ -30,9 +30,9 @@ const DocumentacaoModel = {
     },
 
     // Atualizar documentação
-    async atualizar(id, inscricao) {
-        const sql = `UPDATE Documentacao SET inscricao = ? WHERE id = ?`;
-        await db.execute(sql, [inscricao, id]);
+    async atualizar(id, inscricao, arquivo_url = null) {
+        const sql = `UPDATE Documentacao SET inscricao = ?, arquivo_url = ? WHERE id = ?`;
+        await db.execute(sql, [inscricao, arquivo_url, id]);
     },
 
     // Deletar documentação

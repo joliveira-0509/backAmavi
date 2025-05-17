@@ -11,7 +11,6 @@ function validarId(req, res, next) {
     next();
 }
 
-// Rota para verificar a conexão com o banco de dados
 router.get('/health', async (req, res) => {
     try {
         await db.query('SELECT 1'); // Executa uma consulta simples para verificar a conexão
@@ -25,7 +24,7 @@ router.get('/health', async (req, res) => {
 router.post('/Usuarios', UsuariosController.cadastrarUsuario);
 router.get('/Usuarios', UsuariosController.buscarUsuariosPorNome);
 router.delete('/Usuarios/:id', validarId, UsuariosController.deletarUsuario);
-router.get('/Usuarios', UsuariosController.buscarTodosUsuarios);
+router.get('/Usuarios/todos', UsuariosController.buscarTodosUsuarios);
 router.put('/atualizar/:id', validarId, UsuariosController.atualizarUsuario);
 router.patch('/atualizar/:id', validarId, UsuariosController.atualizarUsuarioParcial);
 

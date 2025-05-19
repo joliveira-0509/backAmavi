@@ -2,7 +2,7 @@
 
 const jwt = require('jsonwebtoken');
 const db = require('../db/db');
-const bcrypt = require('bcryptjs'); // alterado para bcryptjs
+const bcrypt = require('bcryptjs');
 const LoginModel = require('../models/loginModel');
 const SECRET_KEY = process.env.SECRET_KEY || 'sua_chave_secreta';
 
@@ -33,8 +33,7 @@ exports.login = async (req, res) => {
         const usuarioLogin = await LoginModel.buscarPorCpf(cpf);
         if (!usuarioLogin) return res.status(401).json({ message: 'Usuário não encontrado.' });
 
-        // comparar senha (versão síncrona)
-        const senhaValida = bcrypt.compareSync(senha, usuarioLogin.senha);
+        const senhaValida = await bcrypt.compare(senha, usuarioLogin.senha);
         if (!senhaValida) return res.status(401).json({ message: 'Senha incorreta.' });
 
         const token = jwt.sign(
@@ -82,13 +81,10 @@ exports.atualizarSenha = async (req, res) => {
 
         if (!usuarioLogin) return res.status(404).json({ error: 'Usuário não encontrado.' });
 
-        // comparar senha atual (síncrono)
-        const senhaCorreta = bcrypt.compareSync(senha_atual, usuarioLogin.senha);
+        const senhaCorreta = await bcrypt.compare(senha_atual, usuarioLogin.senha);
         if (!senhaCorreta) return res.status(401).json({ error: 'Senha atual incorreta.' });
 
-        // hash nova senha (síncrono)
-        const salt = bcrypt.genSaltSync(10);
-        const senhaCriptografada = bcrypt.hashSync(nova_senha, salt);
+        const senhaCriptografada = await bcrypt.hash(nova_senha, 10);
 
         const sql = `UPDATE Login SET senha = ? WHERE cpf = ?`;
         await db.execute(sql, [senhaCriptografada, decoded.cpf]);
@@ -118,8 +114,7 @@ exports.cadastrarAdm = async (req, res) => {
             return res.status(400).json({ error: 'Este CPF já está cadastrado.' });
         }
 
-        const salt = bcrypt.genSaltSync(10);
-        const senhaCriptografada = bcrypt.hashSync(senha, salt);
+        const senhaCriptografada = await bcrypt.hash(senha, 10);
 
         const novoAdm = { cpf, senha: senhaCriptografada, tipo_usuario: 'Adm', nome };
 
@@ -155,5 +150,47 @@ exports.deletarAdm = async (req, res) => {
     } catch (err) {
         console.error('Erro ao deletar administrador:', err);
         res.status(500).json({ error: 'Erro interno ao deletar administrador.' });
+    }
+};
+
+// Middleware para autenticar token JWT (para proteger rotas)
+exports.autenticarToken = (req, res, next) => {
+    const token = req.cookies.token || req.headers['authorization']?.split(' ')[1];
+
+    if (!token) return res.status(401).json({ error: 'Token não fornecido.' });
+
+    try {
+        const decoded = jwt.verify(token, SECRET_KEY);
+        req.usuario = decoded;
+        next();
+    } catch (err) {
+        return res.status(401).json({ error: 'Token inválido ou expirado.' });
+    }
+};
+
+// Função para verificar login (retorna dados do usuário logado)
+exports.verificarLogin = async (req, res) => {
+    try {
+        const token = req.cookies.token;
+        if (!token) {
+            return res.status(401).json({ erro: 'Usuário não autenticado' });
+        }
+
+        const decoded = jwt.verify(token, SECRET_KEY);
+        const usuario = await LoginModel.buscarPorCpf(decoded.cpf);
+
+        if (!usuario) {
+            return res.status(404).json({ erro: 'Usuário não encontrado' });
+        }
+
+        return res.json({
+            id: usuario.id,
+            nome: usuario.nome,
+            tipo_usuario: usuario.tipo_usuario,
+            cpf: usuario.cpf
+        });
+    } catch (err) {
+        console.error('Erro na verificação do login:', err);
+        return res.status(401).json({ erro: 'Token inválido ou expirado' });
     }
 };

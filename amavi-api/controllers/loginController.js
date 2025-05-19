@@ -168,7 +168,7 @@ exports.autenticarToken = (req, res, next) => {
     }
 };
 
-// Função para verificar login (retorna dados do usuário logado)
+
 exports.verificarLogin = async (req, res) => {
     try {
         const token = req.cookies.token;

@@ -17,4 +17,7 @@ router.post('/cadastrar-adm', loginController.cadastrarAdm);
 // Rota para deletar administrador
 router.delete('/deletar-adm/:cpf', loginController.deletarAdm);
 
+// Rota para verificar login (usuário logado)
+router.get('/verificar-login', loginController.verificarLogin);
+
 module.exports = router;

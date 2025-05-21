@@ -1,6 +1,6 @@
-
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 
 const usuariosRoutes = require('./routes/usuarios');
 const agendaRoutes = require('./routes/agendaEventoRoutes');
@@ -22,6 +22,7 @@ if (!process.env.PORT) {
 
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
 
 app.use('/api', usuariosRoutes);
 app.use('/api/colaborador', colaboradorRoutes);

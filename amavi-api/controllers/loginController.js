@@ -55,7 +55,8 @@ exports.login = async (req, res) => {
 
         res.status(200).json({
             message: `Login bem-sucedido como ${usuarioLogin.tipo_usuario === 'Adm' ? 'administrador' : 'usuário'}.`,
-            tipo_usuario: usuarioLogin.tipo_usuario
+            tipo_usuario: usuarioLogin.tipo_usuario,
+            token
         });
 
     } catch (err) {

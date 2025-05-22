@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const UsuariosController = require('../controllers/usuariosController');
 const db = require('../db/db'); 
+const { autenticarToken } = require('../controllers/loginController'); // <-- Adicione aqui
 
 function validarId(req, res, next) {
     const { id } = req.params;
@@ -22,10 +23,10 @@ router.get('/health', async (req, res) => {
 });
 
 router.post('/Usuarios', UsuariosController.cadastrarUsuario);
-router.get('/Usuarios', UsuariosController.buscarUsuariosPorNome);
-router.delete('/Usuarios/:id', validarId, UsuariosController.deletarUsuario);
-router.get('/Usuarios/todos', UsuariosController.buscarTodosUsuarios);
-router.put('/atualizar/:id', validarId, UsuariosController.atualizarUsuario);
-router.patch('/atualizar/:id', validarId, UsuariosController.atualizarUsuarioParcial);
+router.get('/Usuarios', autenticarToken, UsuariosController.buscarUsuariosPorNome);
+router.delete('/Usuarios/:id', autenticarToken, validarId, UsuariosController.deletarUsuario);
+router.get('/Usuarios/todos', autenticarToken, UsuariosController.buscarTodosUsuarios);
+router.put('/atualizar/:id', autenticarToken, validarId, UsuariosController.atualizarUsuario);
+router.patch('/atualizar/:id', autenticarToken, validarId, UsuariosController.atualizarUsuarioParcial);
 
 module.exports = router;

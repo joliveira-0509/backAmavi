@@ -40,6 +40,7 @@ function validarTipoUsuario(tipo_usuario, idade, id_responsavel) {
 }
 
 const UsuariosController = {
+    // Cadastro permanece aberto!
     cadastrarUsuario: async (req, res) => {
         const conn = await db.getConnection();
         try {
@@ -113,16 +114,33 @@ const UsuariosController = {
         }
     },
 
+    // Só o próprio usuário ou Adm pode buscar por nome
     buscarUsuariosPorNome: async (req, res) => {
         try {
             const { nome } = req.query;
+            const usuarioLogado = req.usuario;
+
             if (!nome) {
                 return res.status(400).json({ error: 'O nome é obrigatório para a busca.' });
+            }
+
+            // Se não for Adm, só pode buscar o próprio nome
+            if (usuarioLogado.tipo_usuario !== 'Adm' && usuarioLogado.nome !== nome) {
+                return res.status(403).json({ error: 'Acesso negado.' });
             }
 
             const results = await UsuariosModel.buscarPorNome(nome);
             if (results.length === 0) {
                 return res.status(404).json({ error: 'Nenhum usuário encontrado com o nome fornecido.' });
+            }
+
+            // Se não for Adm, só retorna o próprio registro
+            if (usuarioLogado.tipo_usuario !== 'Adm') {
+                const filtrado = results.filter(u => u.id === usuarioLogado.id);
+                if (filtrado.length === 0) {
+                    return res.status(404).json({ error: 'Usuário não encontrado.' });
+                }
+                return res.status(200).json(filtrado);
             }
 
             return res.status(200).json(results);
@@ -132,27 +150,14 @@ const UsuariosController = {
         }
     },
 
-    buscarTodosUsuarios: async (req, res) => {
+    buscarPorId: async (req, res) => {
+        const { id } = req.params;
+        const usuarioLogado = req.usuario;
+
         try {
-            const sql = `SELECT * FROM Usuarios`;
-            const [rows] = await db.execute(sql);
-
-            if (rows.length === 0) {
-                return res.status(404).json({ error: 'Nenhum usuário encontrado.' });
-            }
-
-            return res.status(200).json(rows);
-        } catch (err) {
-            console.error('Erro ao buscar todos os usuários:', err);
-            return res.status(500).json({ error: 'Erro ao buscar todos os usuários.', details: err.message });
-        }
-    },
-
-    deletarUsuario: async (req, res) => {
-        try {
-            const { id } = req.params;
-            if (!id) {
-                return res.status(400).json({ error: 'ID do usuário é obrigatório.' });
+            // Só permite se for Adm ou o próprio usuário
+            if (usuarioLogado.tipo_usuario !== 'Adm' && usuarioLogado.id != id) {
+                return res.status(403).json({ error: 'Acesso negado.' });
             }
 
             const usuario = await UsuariosModel.buscarPorId(id);
@@ -160,23 +165,26 @@ const UsuariosController = {
                 return res.status(404).json({ error: 'Usuário não encontrado.' });
             }
 
-            await UsuariosModel.registrarEvento(id, 'exclusao');
-            await UsuariosModel.deletarUsuario(id);
-
-            return res.status(200).json({ message: 'Usuário deletado com sucesso!' });
+            return res.status(200).json(usuario);
         } catch (err) {
-            console.error('Erro ao deletar usuário:', err);
-            return res.status(500).json({ error: 'Erro ao deletar usuário.', details: err.message });
+            console.error('Erro ao buscar usuário por ID:', err);
+            return res.status(500).json({ error: 'Erro ao buscar usuário por ID.' });
         }
     },
 
     atualizarUsuario: async (req, res) => {
-        try {
-            const { id } = req.params;
-            const usuario = req.body;
+        const { id } = req.params;
+        const usuarioLogado = req.usuario;
+        const usuario = req.body;
 
+        try {
             if (!id) {
                 return res.status(400).json({ error: 'ID do usuário é obrigatório.' });
+            }
+
+            // Só permite se for Adm ou o próprio usuário
+            if (usuarioLogado.tipo_usuario !== 'Adm' && usuarioLogado.id != id) {
+                return res.status(403).json({ error: 'Acesso negado.' });
             }
 
             const usuarioExistente = await UsuariosModel.buscarPorId(id);
@@ -195,12 +203,18 @@ const UsuariosController = {
     },
 
     atualizarUsuarioParcial: async (req, res) => {
-        try {
-            const { id } = req.params;
-            const campos = req.body;
+        const { id } = req.params;
+        const usuarioLogado = req.usuario;
+        const campos = req.body;
 
+        try {
             if (!id) {
                 return res.status(400).json({ error: 'ID do usuário é obrigatório.' });
+            }
+
+            // Só permite se for Adm ou o próprio usuário
+            if (usuarioLogado.tipo_usuario !== 'Adm' && usuarioLogado.id != id) {
+                return res.status(403).json({ error: 'Acesso negado.' });
             }
 
             const usuarioExistente = await UsuariosModel.buscarPorId(id);
@@ -218,16 +232,54 @@ const UsuariosController = {
         }
     },
 
-    buscarPorId: async (id) => {
+    deletarUsuario: async (req, res) => {
+        const { id } = req.params;
+        const usuarioLogado = req.usuario;
+
         try {
-            const sql = `SELECT * FROM Usuarios WHERE id = ?`;
-            const [rows] = await db.execute(sql, [id]);
-            return rows.length > 0 ? rows[0] : null;
+            if (!id) {
+                return res.status(400).json({ error: 'ID do usuário é obrigatório.' });
+            }
+
+            // Só permite se for Adm ou o próprio usuário
+            if (usuarioLogado.tipo_usuario !== 'Adm' && usuarioLogado.id != id) {
+                return res.status(403).json({ error: 'Acesso negado.' });
+            }
+
+            const usuario = await UsuariosModel.buscarPorId(id);
+            if (!usuario) {
+                return res.status(404).json({ error: 'Usuário não encontrado.' });
+            }
+
+            await UsuariosModel.registrarEvento(id, 'exclusao');
+            await UsuariosModel.deletarUsuario(id);
+
+            return res.status(200).json({ message: 'Usuário deletado com sucesso!' });
         } catch (err) {
-            console.error('Erro ao buscar usuário por ID:', err);
-            throw err;
+            console.error('Erro ao deletar usuário:', err);
+            return res.status(500).json({ error: 'Erro ao deletar usuário.', details: err.message });
         }
-    }
+    },
+
+    buscarTodosUsuarios: async (req, res) => {
+        // Apenas administradores podem listar todos
+        if (!req.usuario || req.usuario.tipo_usuario !== 'Adm') {
+            return res.status(403).json({ error: 'Acesso negado.' });
+        }
+        try {
+            const sql = `SELECT * FROM Usuarios`;
+            const [rows] = await db.execute(sql);
+
+            if (rows.length === 0) {
+                return res.status(404).json({ error: 'Nenhum usuário encontrado.' });
+            }
+
+            return res.status(200).json(rows);
+        } catch (err) {
+            console.error('Erro ao buscar todos os usuários:', err);
+            return res.status(500).json({ error: 'Erro ao buscar todos os usuários.', details: err.message });
+        }
+    },
 };
 
 module.exports = UsuariosController;

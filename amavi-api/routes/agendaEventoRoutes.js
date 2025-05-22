@@ -1,23 +1,24 @@
 const express = require('express');
 const eventoController = require('../controllers/eventoController');
+const { autenticarToken } = require('../controllers/loginController'); // <-- Adicione aqui
 const router = express.Router();
 
 // Listar todos eventos
-router.get('/eventos', eventoController.listarEventos);
+router.get('/eventos', autenticarToken, eventoController.listarEventos);
 
 // Buscar evento por ID
-router.get('/eventos/:id', eventoController.buscarEventoPorId);
+router.get('/eventos/:id', autenticarToken, eventoController.buscarEventoPorId);
 
 // Cadastrar evento
-router.post('/eventos', eventoController.cadastrarEvento);
+router.post('/eventos', autenticarToken, eventoController.cadastrarEvento);
 
 // Atualizar evento inteiro
-router.put('/eventos/:id', eventoController.atualizarEvento);
+router.put('/eventos/:id', autenticarToken, eventoController.atualizarEvento);
 
 // Atualizar parcialmente
-router.patch('/eventos/:id', eventoController.atualizarParcialEvento);
+router.patch('/eventos/:id', autenticarToken, eventoController.atualizarParcialEvento);
 
 // Deletar evento
-router.delete('/eventos/:id', eventoController.deletarEvento);
+router.delete('/eventos/:id', autenticarToken, eventoController.deletarEvento);
 
 module.exports = router;

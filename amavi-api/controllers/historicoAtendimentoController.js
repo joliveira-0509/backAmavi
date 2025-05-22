@@ -4,6 +4,13 @@ const HistoricoAtendimentoController = {
     buscarPorUsuario: async (req, res) => {
         try {
             const { id_usuario } = req.params;
+            const usuarioLogado = req.usuario;
+
+            // Só permite se for Adm ou o próprio usuário
+            if (usuarioLogado.tipo_usuario !== 'Adm' && usuarioLogado.id != id_usuario) {
+                return res.status(403).json({ error: 'Acesso negado.' });
+            }
+
             const resultados = await HistoricoAtendimentoModel.buscarPorUsuario(id_usuario);
 
             if (!resultados || resultados.length === 0) {
@@ -29,6 +36,11 @@ const HistoricoAtendimentoController = {
     },
 
     buscarTodos: async (req, res) => {
+        const usuarioLogado = req.usuario;
+        // Apenas administradores podem listar todos
+        if (!usuarioLogado || usuarioLogado.tipo_usuario !== 'Adm') {
+            return res.status(403).json({ error: 'Acesso negado.' });
+        }
         try {
             const resultados = await HistoricoAtendimentoModel.buscarTodos();
 
@@ -50,6 +62,13 @@ const HistoricoAtendimentoController = {
     adicionarAtendimento: async (req, res) => {
         try {
             const novoAtendimento = req.body;
+            const usuarioLogado = req.usuario;
+
+            // Só permite se for Adm ou o próprio usuário
+            if (usuarioLogado.tipo_usuario !== 'Adm' && usuarioLogado.id != novoAtendimento.id_usuario) {
+                return res.status(403).json({ error: 'Acesso negado.' });
+            }
+
             if (!novoAtendimento || Object.keys(novoAtendimento).length === 0) {
                 return res.status(400).json({ error: 'Erro ao adicionar atendimento.', details: 'O corpo da requisição não pode estar vazio.' });
             }
@@ -64,8 +83,13 @@ const HistoricoAtendimentoController = {
     buscarPorId: async (req, res) => {
         try {
             const { id } = req.params;
+            const usuarioLogado = req.usuario;
             const resultado = await HistoricoAtendimentoModel.buscarPorId(id);
             if (resultado) {
+                // Só permite se for Adm ou dono do atendimento
+                if (usuarioLogado.tipo_usuario !== 'Adm' && usuarioLogado.id != resultado.id_usuario) {
+                    return res.status(403).json({ error: 'Acesso negado.' });
+                }
                 const atendimentoComStatus = { ...resultado, status: resultado.bp_atendimento ? 'Executado' : 'Pendente' };
                 res.status(200).json(atendimentoComStatus);
             } else {
@@ -80,12 +104,21 @@ const HistoricoAtendimentoController = {
     atualizarAtendimento: async (req, res) => {
         try {
             const { id } = req.params;
+            const usuarioLogado = req.usuario;
             const dadosAtualizados = req.body;
+            const resultado = await HistoricoAtendimentoModel.buscarPorId(id);
+            if (!resultado) {
+                return res.status(404).json({ message: 'Atendimento não encontrado.' });
+            }
+            // Só permite se for Adm ou dono do atendimento
+            if (usuarioLogado.tipo_usuario !== 'Adm' && usuarioLogado.id != resultado.id_usuario) {
+                return res.status(403).json({ error: 'Acesso negado.' });
+            }
             if (!dadosAtualizados || Object.keys(dadosAtualizados).length === 0) {
                 return res.status(400).json({ error: 'Erro ao atualizar atendimento.', details: 'O corpo da requisição não pode estar vazio para atualização.' });
             }
-            const resultado = await HistoricoAtendimentoModel.atualizarAtendimento(id, dadosAtualizados);
-            if (resultado.affectedRows > 0) {
+            const updateResult = await HistoricoAtendimentoModel.atualizarAtendimento(id, dadosAtualizados);
+            if (updateResult.affectedRows > 0) {
                 res.status(200).json({ message: 'Atendimento atualizado com sucesso!' });
             } else {
                 res.status(404).json({ message: 'Atendimento não encontrado.' });
@@ -99,8 +132,17 @@ const HistoricoAtendimentoController = {
     excluirAtendimento: async (req, res) => {
         try {
             const { id } = req.params;
-            const resultado = await HistoricoAtendimentoModel.excluirAtendimento(id);
-            if (resultado.affectedRows > 0) {
+            const usuarioLogado = req.usuario;
+            const resultado = await HistoricoAtendimentoModel.buscarPorId(id);
+            if (!resultado) {
+                return res.status(404).json({ message: 'Atendimento não encontrado.' });
+            }
+            // Só permite se for Adm ou dono do atendimento
+            if (usuarioLogado.tipo_usuario !== 'Adm' && usuarioLogado.id != resultado.id_usuario) {
+                return res.status(403).json({ error: 'Acesso negado.' });
+            }
+            const deleteResult = await HistoricoAtendimentoModel.excluirAtendimento(id);
+            if (deleteResult.affectedRows > 0) {
                 res.status(200).json({ message: 'Atendimento excluído com sucesso!' });
             } else {
                 res.status(404).json({ message: 'Atendimento não encontrado.' });
@@ -112,6 +154,11 @@ const HistoricoAtendimentoController = {
     },
 
     buscarAtendimentosRealizados: async (req, res) => {
+        const usuarioLogado = req.usuario;
+        // Apenas administradores podem listar todos realizados
+        if (!usuarioLogado || usuarioLogado.tipo_usuario !== 'Adm') {
+            return res.status(403).json({ error: 'Acesso negado.' });
+        }
         try {
             const resultados = await HistoricoAtendimentoModel.buscarAtendimentosRealizados();
             if (!resultados || resultados.length === 0) {

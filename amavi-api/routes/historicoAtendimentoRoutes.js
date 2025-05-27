@@ -1,24 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const HistoricoAtendimentoController = require('../controllers/historicoAtendimentoController');
-const { autenticarToken } = require('../controllers/loginController'); // <-- Adicione aqui
-
 // GET /api/historico/atendimento/:id_usuario
-router.get('/atendimento/:id_usuario', autenticarToken, HistoricoAtendimentoController.buscarPorUsuario);
-
+router.get('/atendimento/:id_usuario', HistoricoAtendimentoController.buscarPorUsuario);
 // GET /api/historico/atendimento
-router.get('/atendimento', autenticarToken, HistoricoAtendimentoController.buscarTodos);
-
+router.get('/atendimento', HistoricoAtendimentoController.buscarTodos);
 // POST /api/historico/atendimento
-router.post('/atendimento', autenticarToken, HistoricoAtendimentoController.adicionarAtendimento);
-
+router.post('/atendimento', HistoricoAtendimentoController.adicionarAtendimento);
 // GET /api/historico/atendimento/:id
-router.get('/atendimento/:id', autenticarToken, HistoricoAtendimentoController.buscarPorId);
-
+router.get('/atendimento/:id', HistoricoAtendimentoController.buscarPorId);
 // PUT /api/historico/atendimento/:id
-router.put('/atendimento/:id', autenticarToken, HistoricoAtendimentoController.atualizarAtendimento);
-
+router.put('/atendimento/:id', HistoricoAtendimentoController.atualizarAtendimento);
 // DELETE /api/historico/atendimento/:id
-router.delete('/atendimento/:id', autenticarToken, HistoricoAtendimentoController.excluirAtendimento);
-
+router.delete('/atendimento/:id', HistoricoAtendimentoController.excluirAtendimento);
 module.exports = router;

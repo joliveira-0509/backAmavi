@@ -2,9 +2,9 @@ const db = require('../db/db');
 
 const ColaboradorModel = {
   // Cadastrar novo colaborador
-  async cadastrar(nome, cargo, email, telefone, foto_url) {
-    const sql = `INSERT INTO Colaborador (nome, cargo, email, telefone, foto_url) VALUES (?, ?, ?, ?, ?)`;
-    const [result] = await db.execute(sql, [nome, cargo, email, telefone, foto_url]);
+  async cadastrar(nome, cargo, email, telefone) {
+    const sql = `INSERT INTO Colaborador (nome, cargo, email, telefone) VALUES (?, ?, ?, ?)`;
+    const [result] = await db.execute(sql, [nome, cargo, email, telefone]);
     return result.insertId;
   },
 
@@ -23,9 +23,9 @@ const ColaboradorModel = {
   },
 
   // Atualizar colaborador (completo)
-  async atualizar(id, nome, cargo, email, telefone, foto_url) {
-    const sql = `UPDATE Colaborador SET nome = ?, cargo = ?, email = ?, telefone = ?, foto_url = ? WHERE id = ?`;
-    await db.execute(sql, [nome, cargo, email, telefone, foto_url, id]);
+  async atualizar(id, nome, cargo, email, telefone) {
+    const sql = `UPDATE Colaborador SET nome = ?, cargo = ?, email = ?, telefone = ? WHERE id = ?`;
+    await db.execute(sql, [nome, cargo, email, telefone, id]);
   },
 
   // Atualização parcial do colaborador

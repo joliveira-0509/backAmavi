@@ -43,9 +43,9 @@ async function cadastrarEvento(req, res) {
 // Atualizar evento inteiro - PUT /eventos/:id
 async function atualizarEvento(req, res) {
   const { id } = req.params;
-  const { titulo, descricao, tipo_evento, data_evento, horario_evento, publico, foto_url } = req.body;
+  const { titulo, descricao, tipo_evento, data_evento, horario_evento, publico, } = req.body;
 
-  if (!titulo || !descricao || !tipo_evento || !data_evento || !horario_evento || !publico || !foto_url) {
+  if (!titulo || !descricao || !tipo_evento || !data_evento || !horario_evento || !publico ) {
     return res.status(400).json({ mensagem: 'Todos os campos são obrigatórios.' });
   }
 

@@ -71,8 +71,8 @@ const UsuariosController = {
             const usuarioSql = `
                 INSERT INTO Usuarios (
                     nome, cpf, rg, endereco, email, num_sus, bp_tratamento,
-                    bp_acompanhamento, tipo_usuario, id_responsavel, data_nascimento, foto_url
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    bp_acompanhamento, tipo_usuario, id_responsavel, data_nascimento,
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
             const [usuarioResult] = await conn.execute(usuarioSql, [
                 usuario.nome,
@@ -86,7 +86,7 @@ const UsuariosController = {
                 tipo_usuario,
                 usuario.id_responsavel || null,
                 usuario.data_nascimento,
-                usuario.foto_url || null
+               
             ]);
 
             const id_usuario = usuarioResult.insertId;

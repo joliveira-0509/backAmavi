@@ -6,8 +6,8 @@ const UsuariosModel = {
         try {
             const sql = `
                 INSERT INTO Usuarios 
-                (nome, cpf, rg, endereco, email, num_sus, bp_tratamento, bp_acompanhamento, tipo_usuario, id_responsavel, data_nascimento, foto_url) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (nome, cpf, rg, endereco, email, num_sus, bp_tratamento, bp_acompanhamento, tipo_usuario, id_responsavel, data_nascimento) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
             const params = [
                 usuario.nome,
@@ -20,8 +20,7 @@ const UsuariosModel = {
                 usuario.bp_acompanhamento,
                 usuario.tipo_usuario,
                 usuario.id_responsavel,
-                usuario.data_nascimento,
-                usuario.foto_url
+                usuario.data_nascimento
             ];
             const [result] = await db.execute(sql, params);
             return result;
@@ -78,6 +77,8 @@ const UsuariosModel = {
             throw err;
         }
     },
+
+    // Atualizar usuário inteiro (PUT)
     putUsuario: async (id, usuario) => {
         try {
             const sql = `
@@ -92,8 +93,7 @@ const UsuariosModel = {
                     bp_acompanhamento = ?,
                     tipo_usuario = ?,
                     id_responsavel = ?,
-                    data_nascimento = ?,
-                    foto_url = ?
+                    data_nascimento = ?
                 WHERE id = ?
             `;
             const params = [
@@ -108,7 +108,6 @@ const UsuariosModel = {
                 usuario.tipo_usuario,
                 usuario.id_responsavel,
                 usuario.data_nascimento,
-                usuario.foto_url,
                 id
             ];
             const [result] = await db.execute(sql, params);

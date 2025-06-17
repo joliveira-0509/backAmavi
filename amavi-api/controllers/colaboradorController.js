@@ -29,13 +29,13 @@ const buscarColaboradorPorId = async (req, res) => {
 // Cadastrar novo colaborador
 const cadastrarColaborador = async (req, res) => {
   try {
-    const { nome, cargo, email, telefone, foto_url } = req.body;
+    const { nome, cargo, email, telefone, } = req.body;
 
     if (!nome || !cargo) {
       return res.status(400).json({ erro: 'Nome e cargo são obrigatórios.' });
     }
 
-    const insertId = await ColaboradorModel.cadastrar(nome, cargo, email, telefone, foto_url);
+    const insertId = await ColaboradorModel.cadastrar(nome, cargo, email, telefone, );
     res.status(201).json({ mensagem: 'Colaborador cadastrado com sucesso!', id: insertId });
   } catch (error) {
     res.status(500).json({ erro: 'Erro ao cadastrar colaborador.', detalhes: error.message });
@@ -46,14 +46,14 @@ const cadastrarColaborador = async (req, res) => {
 const atualizarColaborador = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nome, cargo, email, telefone, foto_url } = req.body;
+    const { nome, cargo, email, telefone,  } = req.body;
 
     const colaboradorExistente = await ColaboradorModel.buscarPorId(id);
     if (!colaboradorExistente) {
       return res.status(404).json({ erro: 'Colaborador não encontrado.' });
     }
 
-    await ColaboradorModel.atualizar(id, nome, cargo, email, telefone, foto_url);
+    await ColaboradorModel.atualizar(id, nome, cargo, email, telefone,);
 
     res.status(200).json({ mensagem: 'Colaborador atualizado com sucesso.' });
   } catch (error) {

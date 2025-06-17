@@ -5,8 +5,8 @@ const Evento = {
   create: async (dados) => {
     const sql = `
       INSERT INTO AgendaEvento
-      (titulo, descricao, tipo_evento, data_evento, horario_evento, publico, foto_url, criado_em)
-      VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+      (titulo, descricao, tipo_evento, data_evento, horario_evento, publico, criado_em)
+      VALUES (?, ?, ?, ?, ?, ?, NOW())
     `;
     const valores = [
       dados.titulo,
@@ -14,8 +14,7 @@ const Evento = {
       dados.tipo_evento,
       dados.data_evento,
       dados.horario_evento,
-      dados.publico,
-      dados.foto_url
+      dados.publico
     ];
 
     const [resultado] = await db.execute(sql, valores);
@@ -41,7 +40,7 @@ const Evento = {
     const sql = `
       UPDATE AgendaEvento SET
       titulo = ?, descricao = ?, tipo_evento = ?, data_evento = ?,
-      horario_evento = ?, publico = ?, foto_url = ?
+      horario_evento = ?, publico = ?
       WHERE id = ?
     `;
     const valores = [
@@ -51,7 +50,6 @@ const Evento = {
       dados.data_evento,
       dados.horario_evento,
       dados.publico,
-      dados.foto_url,
       id
     ];
     const [resultado] = await db.execute(sql, valores);

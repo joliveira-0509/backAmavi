@@ -6,8 +6,8 @@ const AgendaEventoModel = {
       const sql = `
         INSERT INTO AgendaEvento (
           titulo, descricao, tipo_evento, data_evento,
-          horario_evento, publico, foto_url
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+          horario_evento, publico
+        ) VALUES (?, ?, ?, ?, ?, ?)
       `;
       const [result] = await db.execute(sql, [
         evento.titulo,
@@ -15,8 +15,7 @@ const AgendaEventoModel = {
         evento.tipo_evento,
         evento.data_evento,
         evento.horario_evento,
-        evento.publico,
-        evento.foto_url // alterado para foto_url
+        evento.publico
       ]);
       return result;
     } catch (err) {

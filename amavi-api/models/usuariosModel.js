@@ -150,6 +150,18 @@ const UsuariosModel = {
             console.error('Erro ao registrar evento:', err);
             throw err;
         }
+    },
+
+    // Atualizar foto do usuário
+    atualizarFoto: async (id, foto_url) => {
+        try {
+            const sql = `UPDATE Usuarios SET foto_url = ? WHERE id = ?`;
+            const [result] = await db.execute(sql, [foto_url, id]);
+            return result;
+        } catch (err) {
+            console.error('Erro ao atualizar foto do usuário:', err);
+            throw err;
+        }
     }
 };
 

@@ -4,14 +4,11 @@ const AgendaEventoController = {
   cadastrar: async (req, res) => {
     try {
       const evento = req.body;
-      if (req.file) {
-        evento.foto_url = `/uploads/${req.file.filename}`; // alterado para foto_url
-      }
+      // Removido tratamento de foto_url/imagem
       const result = await AgendaEventoModel.cadastrar(evento);
       return res.status(201).json({
         message: 'Evento cadastrado com sucesso!',
-        id: result.insertId,
-        foto_url: evento.foto_url || null // alterado para foto_url
+        id: result.insertId
       });
     } catch (err) {
       console.error('Erro ao cadastrar evento:', err);

@@ -13,8 +13,8 @@ const upload = multer({
 });
 
 const multiUpload = upload.fields([
-    { name: 'foto', maxCount: 1 },
-    { name: 'laudoMedico', maxCount: 1 }
+    { name: 'foto_blob', maxCount: 1 },
+    { name: 'laudo_Medico', maxCount: 1 }
 ]);
 
 function validarId(req, res, next) {

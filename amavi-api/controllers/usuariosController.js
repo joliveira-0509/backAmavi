@@ -342,6 +342,45 @@ const UsuariosController = {
             return res.status(500).json({ error: 'Erro ao buscar todos os usuários.', details: err.message });
         }
     },
+
+    /**
+     * Atualiza apenas a foto do usuário
+     */
+    uploadFotoUsuario: async (req, res) => {
+        const { id } = req.params;
+        const usuarioLogado = req.usuario;
+        const foto = req.file;
+
+        try {
+            if (!id) {
+                return res.status(400).json({ error: 'ID do usuário é obrigatório.' });
+            }
+
+            // Restringe acesso para não administradores
+            if (usuarioLogado.tipo_usuario !== 'Adm' && usuarioLogado.id != id) {
+                return res.status(403).json({ error: 'Acesso negado.' });
+            }
+
+            // Verifica se o usuário existe
+            const usuarioExistente = await UsuariosModel.buscarPorId(id);
+            if (!usuarioExistente) {
+                return res.status(404).json({ error: 'Usuário não encontrado.' });
+            }
+
+            if (!foto) {
+                return res.status(400).json({ error: 'Nenhuma foto enviada.' });
+            }
+
+            const foto_url = `/uploads/${foto.filename}`;
+            await UsuariosModel.atualizarFoto(id, foto_url);
+            await UsuariosModel.registrarEvento(id, 'atualizacao_foto');
+
+            return res.status(200).json({ message: 'Foto atualizada com sucesso!', foto_url });
+        } catch (err) {
+            console.error('Erro ao atualizar foto do usuário:', err);
+            return res.status(500).json({ error: 'Erro ao atualizar foto do usuário.', details: err.message });
+        }
+    },
 };
 
 module.exports = UsuariosController;

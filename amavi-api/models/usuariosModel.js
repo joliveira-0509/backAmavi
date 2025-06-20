@@ -5,22 +5,33 @@ const UsuariosModel = {
         try {
             const sql = `
                 INSERT INTO Usuarios 
-                (nome, cpf, rg, endereco, email, num_sus, laudo_medico, bp_acompanhamento, tipo_usuario, id_responsavel, data_nascimento, foto_blob) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (nome, cpf, telefone, rg, profissao, endereco, rua, numero, cidade, estado, cep, sexo, email, num_sus, laudo_medico, informacoes_medicas, senha, bp_acompanhamento, tipo_usuario, id_responsavel, data_nascimento, foto_blob, criado_em) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
             const params = [
                 usuario.nome,
                 usuario.cpf,
+                usuario.telefone,
                 usuario.rg,
+                usuario.profissao,
                 usuario.endereco,
+                usuario.rua,
+                usuario.numero,
+                usuario.cidade,
+                usuario.estado,
+                usuario.cep,
+                usuario.sexo,
                 usuario.email,
                 usuario.num_sus,
                 usuario.laudo_medico || null,
-                usuario.bp_acompanhamento,
+                usuario.informacoes_medicas || null,
+                usuario.senha,
+                usuario.bp_acompanhamento || null,
                 usuario.tipo_usuario,
                 usuario.id_responsavel,
                 usuario.data_nascimento,
-                usuario.foto_blob || null
+                usuario.foto_blob || null,
+                usuario.criado_em || new Date()
             ];
             const [result] = await db.execute(sql, params);
             return result;
@@ -55,31 +66,53 @@ const UsuariosModel = {
             UPDATE Usuarios SET
                 nome = ?,
                 cpf = ?,
+                telefone = ?,
                 rg = ?,
+                profissao = ?,
                 endereco = ?,
+                rua = ?,
+                numero = ?,
+                cidade = ?,
+                estado = ?,
+                cep = ?,
+                sexo = ?,
                 email = ?,
                 num_sus = ?,
                 laudo_medico = ?,
+                informacoes_medicas = ?,
+                senha = ?,
                 bp_acompanhamento = ?,
                 tipo_usuario = ?,
                 id_responsavel = ?,
                 data_nascimento = ?,
-                foto_blob = ?
+                foto_blob = ?,
+                criado_em = ?
             WHERE id = ?
         `;
         const params = [
             usuario.nome,
             usuario.cpf,
+            usuario.telefone,
             usuario.rg,
+            usuario.profissao,
             usuario.endereco,
+            usuario.rua,
+            usuario.numero,
+            usuario.cidade,
+            usuario.estado,
+            usuario.cep,
+            usuario.sexo,
             usuario.email,
             usuario.num_sus,
             usuario.laudo_medico || null,
-            usuario.bp_acompanhamento,
+            usuario.informacoes_medicas || null,
+            usuario.senha,
+            usuario.bp_acompanhamento || null,
             usuario.tipo_usuario,
             usuario.id_responsavel,
             usuario.data_nascimento,
             usuario.foto_blob || null,
+            usuario.criado_em || new Date(),
             id
         ];
         const [result] = await db.execute(sql, params);

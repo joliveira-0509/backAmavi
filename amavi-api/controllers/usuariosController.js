@@ -96,22 +96,32 @@ const UsuariosController = {
 
             await conn.execute(`
                 INSERT INTO Usuarios (
-                    nome, cpf, rg, endereco, email, num_sus, laudo_medico, bp_acompanhamento,
-                    tipo_usuario, id_responsavel, data_nascimento, foto_blob
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    nome, cpf, telefone, rg, profissao, endereco, rua, numero, cidade, estado, cep, sexo, email, num_sus, laudo_medico, informacoes_medicas, senha, bp_acompanhamento, tipo_usuario, id_responsavel, data_nascimento, foto_blob, criado_em
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `, [
                 usuario.nome,
                 usuario.cpf,
+                usuario.telefone || null,
                 usuario.rg || null,
+                usuario.profissao || null,
                 usuario.endereco || null,
+                usuario.rua || null,
+                usuario.numero || null,
+                usuario.cidade || null,
+                usuario.estado || null,
+                usuario.cep || null,
+                usuario.sexo || null,
                 usuario.email || null,
                 usuario.num_sus || null,
                 laudo_blob,
+                usuario.informacoes_medicas || null,
+                senhaCriptografada,
                 usuario.bp_acompanhamento || null,
                 tipo_usuario,
                 usuario.id_responsavel || null,
                 usuario.data_nascimento,
-                foto_blob
+                foto_blob,
+                usuario.criado_em || new Date()
             ]);
 
             await conn.commit();

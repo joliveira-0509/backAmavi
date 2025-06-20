@@ -63,6 +63,18 @@ const UsuariosController = {
     cadastrarUsuario: async (req, res) => {
         let conn;
         try {
+            // Tratamento para erro de campo inesperado do multer
+            if (req.fileValidationError) {
+                console.log('Erro de campo inesperado (multer):', req.fileValidationError);
+                return res.status(400).json({ error: req.fileValidationError });
+            }
+            if (req.files && req.files.error) {
+                console.log('Erro de campo inesperado (multer):', req.files.error);
+                return res.status(400).json({ error: req.files.error });
+            }
+
+            console.log('Campos de arquivo recebidos:', Object.keys(req.files || {}));
+
             conn = await db.getConnection();
             const usuario = req.body;
             const arquivos = req.files || {};
@@ -129,6 +141,10 @@ const UsuariosController = {
 
         } catch (err) {
             if (conn) await conn.rollback();
+            if (err.name === 'MulterError' && err.code === 'LIMIT_UNEXPECTED_FILE') {
+                console.log('Erro de campo inesperado (multer):', err);
+                return res.status(400).json({ error: 'Campo de arquivo inesperado enviado.' });
+            }
             console.error('Erro ao cadastrar usuário:', err);
             return res.status(500).json({ error: 'Erro ao cadastrar usuário.', details: err.message });
         } finally {
@@ -364,8 +380,14 @@ const UsuariosController = {
         const foto = req.file;
 
         try {
-            if (!id) {
-                return res.status(400).json({ error: 'ID do usuário é obrigatório.' });
+            // Tratamento para erro de campo inesperado do multer
+            if (req.fileValidationError) {
+                console.log('Erro de campo inesperado (multer):', req.fileValidationError);
+                return res.status(400).json({ error: req.fileValidationError });
+            }
+            if (req.files && req.files.error) {
+                console.log('Erro de campo inesperado (multer):', req.files.error);
+                return res.status(400).json({ error: req.files.error });
             }
 
             // Restringe acesso para não administradores
@@ -389,6 +411,10 @@ const UsuariosController = {
 
             return res.status(200).json({ message: 'Foto atualizada com sucesso!' });
         } catch (err) {
+            if (err.name === 'MulterError' && err.code === 'LIMIT_UNEXPECTED_FILE') {
+                console.log('Erro de campo inesperado (multer):', err);
+                return res.status(400).json({ error: 'Campo de arquivo inesperado enviado.' });
+            }
             console.error('Erro ao atualizar foto do usuário:', err);
             return res.status(500).json({ error: 'Erro ao atualizar foto do usuário.', details: err.message });
         }

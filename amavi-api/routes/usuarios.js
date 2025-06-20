@@ -7,14 +7,11 @@ const multer = require('multer');
 const path = require('path');
 
 // Configuração do Multer para upload de múltiplos arquivos (foto e laudo médico)
-const upload = multer({
-    storage: multer.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 } // Limite de 10MB para cada arquivo
-});
+const upload = multer();
 
 const multiUpload = upload.fields([
     { name: 'foto_blob', maxCount: 1 },
-    { name: 'laudo_Medico', maxCount: 1 }
+    { name: 'laudo_medico', maxCount: 1 }
 ]);
 
 function validarId(req, res, next) {

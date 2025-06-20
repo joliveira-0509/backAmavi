@@ -74,6 +74,11 @@ const UsuariosController = {
 
             conn = await db.getConnection();
             const usuario = { ...req.body }; // Cria uma cópia de req.body
+            // Remove pontos e traços do CPF
+            if (usuario.cpf) {
+                usuario.cpf = usuario.cpf.replace(/[.\-]/g, '');
+            }
+
             const arquivos = req.files || {};
 
             // Pega os buffers dos arquivos enviados
@@ -93,7 +98,7 @@ const UsuariosController = {
                 return res.status(400).json({ error: 'Campos obrigatórios (nome, cpf, senha) não informados.' });
             }
 
-            // Validação do formato do CPF
+            // Validação do formato do CPF (agora aceita pontos e traços no input)
             if (!/^\d{11}$/.test(usuario.cpf)) {
                 await conn.rollback();
                 return res.status(400).json({ error: 'CPF inválido. Deve conter 11 dígitos numéricos.' });

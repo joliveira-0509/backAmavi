@@ -1,8 +1,12 @@
 const bcrypt = require('bcryptjs');
 const UsuariosModel = require('../models/usuariosModel');
 const db = require('../db/db');
-const { substituirUndefinedPorNull } = require('../utils/limparCampos');
 
+/**
+ * Função auxiliar para calcular a idade a partir da data de nascimento
+ * @param {string} dataNasc - Data de nascimento no formato ISO
+ * @returns {number} idade calculada
+ */
 function calcularIdade(dataNasc) {
     const hoje = new Date();
     const nascimento = new Date(dataNasc);
@@ -14,6 +18,13 @@ function calcularIdade(dataNasc) {
     return idade;
 }
 
+/**
+ * Valida o tipo de usuário, idade e relação de dependência
+ * @param {string} tipo_usuario - Tipo do usuário (responsavel, usuario, dependente)
+ * @param {number} idade - Idade do usuário
+ * @param {number|null} id_responsavel - ID do responsável, se houver
+ * @returns {string|null} Mensagem de erro ou null se válido
+ */
 function validarTipoUsuario(tipo_usuario, idade, id_responsavel) {
     const tiposValidos = ['responsavel', 'usuario', 'dependente'];
     if (!tiposValidos.includes(tipo_usuario)) {
@@ -40,10 +51,16 @@ function validarTipoUsuario(tipo_usuario, idade, id_responsavel) {
     return null;
 }
 
+// Controlador de Usuários com métodos para CRUD e validações
 const UsuariosController = {
+    /**
+     * Cadastra um novo usuário no sistema
+     * - Cria login, usuário, registra evento e trata upload de foto
+     */
     cadastrarUsuario: async (req, res) => {
         let conn;
         try {
+            // Tratamento para erro de campo inesperado do multer
             if (req.fileValidationError) {
                 console.log('Erro de campo inesperado (multer):', req.fileValidationError);
                 return res.status(400).json({ error: req.fileValidationError });
@@ -56,14 +73,43 @@ const UsuariosController = {
             console.log('Campos de arquivo recebidos:', Object.keys(req.files || {}));
 
             conn = await db.getConnection();
-            const usuario = substituirUndefinedPorNull(req.body);
+            const usuario = { ...req.body }; // Cria uma cópia de req.body
             const arquivos = req.files || {};
 
+            // Pega os buffers dos arquivos enviados
             const foto_blob = arquivos.foto?.[0]?.buffer || null;
             const laudo_blob = arquivos.laudoMedico?.[0]?.buffer || null;
 
-            if (!usuario.senha || !usuario.nome || !usuario.cpf) {
+            // Substitui valores undefined por null
+            for (const key in usuario) {
+                if (usuario[key] === undefined) {
+                    usuario[key] = null;
+                }
+            }
+
+            // Validação de campos obrigatórios
+            if (!usuario.nome || !usuario.cpf || !usuario.senha) {
+                await conn.rollback();
                 return res.status(400).json({ error: 'Campos obrigatórios (nome, cpf, senha) não informados.' });
+            }
+
+            // Validação do formato do CPF
+            if (!/^\d{11}$/.test(usuario.cpf)) {
+                await conn.rollback();
+                return res.status(400).json({ error: 'CPF inválido. Deve conter 11 dígitos numéricos.' });
+            }
+
+            // Validação da data de nascimento
+            if (!usuario.data_nascimento || isNaN(new Date(usuario.data_nascimento).getTime())) {
+                await conn.rollback();
+                return res.status(400).json({ error: 'Data de nascimento inválida.' });
+            }
+
+            // Verifica unicidade do CPF
+            const [existing] = await conn.execute(`SELECT 1 FROM Login WHERE cpf = ?`, [usuario.cpf]);
+            if (existing.length > 0) {
+                await conn.rollback();
+                return res.status(400).json({ error: 'CPF já cadastrado.' });
             }
 
             await conn.beginTransaction();
@@ -91,24 +137,24 @@ const UsuariosController = {
             `, [
                 usuario.nome,
                 usuario.cpf,
-                usuario.telefone,
-                usuario.rg,
-                usuario.profissao,
-                usuario.endereco,
-                usuario.rua,
-                usuario.numero,
-                usuario.cidade,
-                usuario.estado,
-                usuario.cep,
-                usuario.sexo,
-                usuario.email,
-                usuario.num_sus,
+                usuario.telefone || null,
+                usuario.rg || null,
+                usuario.profissao || null,
+                usuario.endereco || null,
+                usuario.rua || null,
+                usuario.numero || null,
+                usuario.cidade || null,
+                usuario.estado || null,
+                usuario.cep || null,
+                usuario.sexo || null,
+                usuario.email || null,
+                usuario.num_sus || null,
                 laudo_blob,
-                usuario.informacoes_medicas,
+                usuario.informacoes_medicas || null,
                 senhaCriptografada,
-                usuario.bp_acompanhamento,
+                usuario.bp_acompanhamento || null,
                 tipo_usuario,
-                usuario.id_responsavel,
+                usuario.id_responsavel || null,
                 usuario.data_nascimento,
                 foto_blob,
                 usuario.criado_em || new Date()
@@ -119,6 +165,10 @@ const UsuariosController = {
 
         } catch (err) {
             if (conn) await conn.rollback();
+            if (err.name === 'MulterError' && err.code === 'LIMIT_UNEXPECTED_FILE') {
+                console.log('Erro de campo inesperado (multer):', err);
+                return res.status(400).json({ error: 'Campo de arquivo inesperado enviado.' });
+            }
             console.error('Erro ao cadastrar usuário:', err);
             return res.status(500).json({ error: 'Erro ao cadastrar usuário.', details: err.message });
         } finally {
@@ -126,24 +176,32 @@ const UsuariosController = {
         }
     },
 
+    /**
+     * Busca usuários pelo nome
+     * - Apenas o próprio usuário ou administradores podem buscar
+     */
     buscarUsuariosPorNome: async (req, res) => {
         try {
             const { nome } = req.query;
             const usuarioLogado = req.usuario;
 
+            // Validação do parâmetro nome
             if (!nome) {
                 return res.status(400).json({ error: 'O nome é obrigatório para a busca.' });
             }
 
+            // Restringe busca para não administradores
             if (usuarioLogado.tipo_usuario !== 'Adm' && usuarioLogado.nome !== nome) {
                 return res.status(403).json({ error: 'Acesso negado.' });
             }
 
+            // Busca usuários pelo nome
             const results = await UsuariosModel.buscarPorNome(nome);
             if (results.length === 0) {
                 return res.status(404).json({ error: 'Nenhum usuário encontrado com o nome fornecido.' });
             }
 
+            // Se não for Adm, retorna apenas o próprio registro
             if (usuarioLogado.tipo_usuario !== 'Adm') {
                 const filtrado = results.filter(u => u.id === usuarioLogado.id);
                 if (filtrado.length === 0) {
@@ -159,20 +217,27 @@ const UsuariosController = {
         }
     },
 
+    /**
+     * Busca usuário por ID
+     * - Apenas o próprio usuário ou administradores podem buscar
+     */
     buscarPorId: async (req, res) => {
         const { id } = req.params;
         const usuarioLogado = req.usuario;
 
         try {
+            // Restringe acesso para não administradores
             if (usuarioLogado.tipo_usuario !== 'Adm' && usuarioLogado.id != id) {
                 return res.status(403).json({ error: 'Acesso negado.' });
             }
 
+            // Busca usuário pelo ID
             const usuario = await UsuariosModel.buscarPorId(id);
             if (!usuario) {
                 return res.status(404).json({ error: 'Usuário não encontrado.' });
             }
 
+            // Se houver foto_blob, converte para base64
             if (usuario.foto_blob) {
                 usuario.foto_base64 = `data:image/jpeg;base64,${usuario.foto_blob.toString('base64')}`;
             } else {
@@ -183,29 +248,43 @@ const UsuariosController = {
             return res.status(200).json(usuario);
         } catch (err) {
             console.error('Erro ao buscar usuário por ID:', err);
-            return res.status(500).json({ error: 'Erro ao buscar usuário por ID.' });
+            return res.status(500).json({ error: 'Erro ao buscar usuário por ID.', details: err.message });
         }
     },
 
+    /**
+     * Atualiza todos os dados de um usuário (PUT)
+     * - Apenas o próprio usuário ou administradores podem atualizar
+     */
     atualizarUsuario: async (req, res) => {
         const { id } = req.params;
         const usuarioLogado = req.usuario;
-        const usuario = substituirUndefinedPorNull(req.body);
+        const usuario = { ...req.body };
 
         try {
             if (!id) {
                 return res.status(400).json({ error: 'ID do usuário é obrigatório.' });
             }
 
+            // Restringe acesso para não administradores
             if (usuarioLogado.tipo_usuario !== 'Adm' && usuarioLogado.id != id) {
                 return res.status(403).json({ error: 'Acesso negado.' });
             }
 
+            // Verifica se o usuário existe
             const usuarioExistente = await UsuariosModel.buscarPorId(id);
             if (!usuarioExistente) {
                 return res.status(404).json({ error: 'Usuário não encontrado.' });
             }
 
+            // Substitui valores undefined por null
+            for (const key in usuario) {
+                if (usuario[key] === undefined) {
+                    usuario[key] = null;
+                }
+            }
+
+            // Atualiza usuário e registra evento
             await UsuariosModel.putUsuario(id, usuario);
             await UsuariosModel.registrarEvento(id, 'atualizacao');
 
@@ -216,25 +295,39 @@ const UsuariosController = {
         }
     },
 
+    /**
+     * Atualiza parcialmente os dados de um usuário (PATCH)
+     * - Apenas o próprio usuário ou administradores podem atualizar
+     */
     atualizarUsuarioParcial: async (req, res) => {
         const { id } = req.params;
         const usuarioLogado = req.usuario;
-        const campos = substituirUndefinedPorNull(req.body);
+        const campos = { ...req.body };
 
         try {
             if (!id) {
                 return res.status(400).json({ error: 'ID do usuário é obrigatório.' });
             }
 
+            // Restringe acesso para não administradores
             if (usuarioLogado.tipo_usuario !== 'Adm' && usuarioLogado.id != id) {
                 return res.status(403).json({ error: 'Acesso negado.' });
             }
 
+            // Verifica se o usuário existe
             const usuarioExistente = await UsuariosModel.buscarPorId(id);
             if (!usuarioExistente) {
                 return res.status(404).json({ error: 'Usuário não encontrado.' });
             }
 
+            // Substitui valores undefined por null
+            for (const key in campos) {
+                if (campos[key] === undefined) {
+                    campos[key] = null;
+                }
+            }
+
+            // Atualiza parcialmente e registra evento
             await UsuariosModel.patchUsuario(id, campos);
             await UsuariosModel.registrarEvento(id, 'atualizacao_parcial');
 
@@ -245,6 +338,10 @@ const UsuariosController = {
         }
     },
 
+    /**
+     * Deleta um usuário do sistema
+     * - Apenas o próprio usuário ou administradores podem deletar
+     */
     deletarUsuario: async (req, res) => {
         const { id } = req.params;
         const usuarioLogado = req.usuario;
@@ -254,15 +351,18 @@ const UsuariosController = {
                 return res.status(400).json({ error: 'ID do usuário é obrigatório.' });
             }
 
+            // Restringe acesso para não administradores
             if (usuarioLogado.tipo_usuario !== 'Adm' && usuarioLogado.id != id) {
                 return res.status(403).json({ error: 'Acesso negado.' });
             }
 
+            // Verifica se o usuário existe
             const usuario = await UsuariosModel.buscarPorId(id);
             if (!usuario) {
                 return res.status(404).json({ error: 'Usuário não encontrado.' });
             }
 
+            // Registra evento e deleta usuário
             await UsuariosModel.registrarEvento(id, 'exclusao');
             await UsuariosModel.deletarUsuario(id);
 
@@ -273,6 +373,10 @@ const UsuariosController = {
         }
     },
 
+    /**
+     * Lista todos os usuários do sistema
+     * - Apenas administradores podem acessar
+     */
     buscarTodosUsuarios: async (req, res) => {
         if (!req.usuario || req.usuario.tipo_usuario !== 'Adm') {
             return res.status(403).json({ error: 'Acesso negado.' });
@@ -285,6 +389,7 @@ const UsuariosController = {
                 return res.status(404).json({ error: 'Nenhum usuário encontrado.' });
             }
 
+            // Adiciona foto_base64 em cada usuário
             const usuariosComFoto = rows.map(usuario => {
                 if (usuario.foto_blob) {
                     usuario.foto_base64 = `data:image/jpeg;base64,${usuario.foto_blob.toString('base64')}`;
@@ -302,12 +407,16 @@ const UsuariosController = {
         }
     },
 
+    /**
+     * Atualiza apenas a foto do usuário
+     */
     uploadFotoUsuario: async (req, res) => {
         const { id } = req.params;
         const usuarioLogado = req.usuario;
         const foto = req.file;
 
         try {
+            // Tratamento para erro de campo inesperado do multer
             if (req.fileValidationError) {
                 console.log('Erro de campo inesperado (multer):', req.fileValidationError);
                 return res.status(400).json({ error: req.fileValidationError });
@@ -317,10 +426,12 @@ const UsuariosController = {
                 return res.status(400).json({ error: req.files.error });
             }
 
+            // Restringe acesso para não administradores
             if (usuarioLogado.tipo_usuario !== 'Adm' && usuarioLogado.id != id) {
                 return res.status(403).json({ error: 'Acesso negado.' });
             }
 
+            // Verifica se o usuário existe
             const usuarioExistente = await UsuariosModel.buscarPorId(id);
             if (!usuarioExistente) {
                 return res.status(404).json({ error: 'Usuário não encontrado.' });
@@ -336,6 +447,10 @@ const UsuariosController = {
 
             return res.status(200).json({ message: 'Foto atualizada com sucesso!' });
         } catch (err) {
+            if (err.name === 'MulterError' && err.code === 'LIMIT_UNEXPECTED_FILE') {
+                console.log('Erro de campo inesperado (multer):', err);
+                return res.status(400).json({ error: 'Campo de arquivo inesperado enviado.' });
+            }
             console.error('Erro ao atualizar foto do usuário:', err);
             return res.status(500).json({ error: 'Erro ao atualizar foto do usuário.', details: err.message });
         }

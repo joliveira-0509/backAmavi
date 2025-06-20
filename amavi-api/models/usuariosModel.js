@@ -1,13 +1,12 @@
 const db = require('../db/db.js');
 
 const UsuariosModel = {
-    // Criar um novo usuário
     criarUsuario: async (usuario) => {
         try {
             const sql = `
                 INSERT INTO Usuarios 
-                (nome, cpf, rg, endereco, email, num_sus, bp_tratamento, bp_acompanhamento, tipo_usuario, id_responsavel, data_nascimento) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (nome, cpf, rg, endereco, email, num_sus, bp_tratamento, bp_acompanhamento, tipo_usuario, id_responsavel, data_nascimento, foto_url) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
             const params = [
                 usuario.nome,
@@ -20,7 +19,8 @@ const UsuariosModel = {
                 usuario.bp_acompanhamento,
                 usuario.tipo_usuario,
                 usuario.id_responsavel,
-                usuario.data_nascimento
+                usuario.data_nascimento,
+                usuario.foto_url || null   // <-- Aqui está o campo da foto
             ];
             const [result] = await db.execute(sql, params);
             return result;
@@ -30,7 +30,6 @@ const UsuariosModel = {
         }
     },
 
-    // Buscar usuários pelo nome
     buscarPorNome: async (nome) => {
         try {
             const sql = `SELECT * FROM Usuarios WHERE nome LIKE ?`;
@@ -42,31 +41,28 @@ const UsuariosModel = {
         }
     },
 
-    // Buscar usuário pelo ID
     buscarPorId: async (id) => {
         try {
             const sql = `SELECT * FROM Usuarios WHERE id = ?`;
             const [result] = await db.execute(sql, [id]);
-            return result[0]; // Retorna o primeiro registro encontrado
+            return result[0];
         } catch (err) {
             console.error('Erro ao buscar usuário por ID:', err);
             throw err;
         }
     },
 
-    // Buscar usuário pelo CPF
     buscarPorCpf: async (cpf) => {
         try {
             const sql = `SELECT * FROM Usuarios WHERE cpf = ?`;
             const [result] = await db.execute(sql, [cpf]);
-            return result[0]; // Retorna o primeiro registro encontrado
+            return result[0];
         } catch (err) {
             console.error('Erro ao buscar usuário por CPF:', err);
             throw err;
         }
     },
 
-    // Deletar usuário pelo ID
     deletarUsuario: async (id) => {
         try {
             const sql = `DELETE FROM Usuarios WHERE id = ?`;
@@ -78,7 +74,6 @@ const UsuariosModel = {
         }
     },
 
-    // Atualizar usuário inteiro (PUT)
     putUsuario: async (id, usuario) => {
         try {
             const sql = `
@@ -93,7 +88,8 @@ const UsuariosModel = {
                     bp_acompanhamento = ?,
                     tipo_usuario = ?,
                     id_responsavel = ?,
-                    data_nascimento = ?
+                    data_nascimento = ?,
+                    foto_url = ?
                 WHERE id = ?
             `;
             const params = [
@@ -108,6 +104,7 @@ const UsuariosModel = {
                 usuario.tipo_usuario,
                 usuario.id_responsavel,
                 usuario.data_nascimento,
+                usuario.foto_url || null,
                 id
             ];
             const [result] = await db.execute(sql, params);
@@ -118,7 +115,6 @@ const UsuariosModel = {
         }
     },
 
-    // Atualizar parcialmente os dados do usuário (PATCH)
     patchUsuario: async (id, campos) => {
         try {
             const keys = Object.keys(campos);
@@ -140,7 +136,6 @@ const UsuariosModel = {
         }
     },
 
-    // Registrar evento (ex.: cadastro, exclusão)
     registrarEvento: async (id_usuario, tipo_evento) => {
         try {
             const sql = `INSERT INTO EventoUsuario (id_usuario, tipo_evento) VALUES (?, ?)`;
@@ -152,7 +147,6 @@ const UsuariosModel = {
         }
     },
 
-    // Atualizar foto do usuário
     atualizarFoto: async (id, foto_url) => {
         try {
             const sql = `UPDATE Usuarios SET foto_url = ? WHERE id = ?`;

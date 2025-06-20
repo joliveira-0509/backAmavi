@@ -1,8 +1,37 @@
 const express = require('express');
 const router = express.Router();
 const UsuariosController = require('../controllers/usuariosController');
-const db = require('../db/db'); 
-const { autenticarToken } = require('../controllers/loginController'); // <-- Adicione aqui
+const db = require('../db/db');
+const { autenticarToken } = require('../controllers/loginController');
+const multer = require('multer');
+const path = require('path');
+
+// Configuração do Multer para upload de imagens
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/'); // Pasta onde as imagens serão salvas
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname)); // Nome único para a imagem
+    }
+});
+
+const upload = multer({
+    storage: storage,
+    fileFilter: (req, file, cb) => {
+        const filetypes = /jpeg|jpg|png/;
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+        const mimetype = filetypes.test(file.mimetype);
+
+        if (extname && mimetype) {
+            return cb(null, true);
+        } else {
+            cb(new Error('Apenas imagens JPEG ou PNG são permitidas!'));
+        }
+    },
+    limits: { fileSize: 5 * 1024 * 1024 } // Limite de 5MB
+});
 
 function validarId(req, res, next) {
     const { id } = req.params;
@@ -14,7 +43,7 @@ function validarId(req, res, next) {
 
 router.get('/health', async (req, res) => {
     try {
-        await db.query('SELECT 1'); // Executa uma consulta simples para verificar a conexão
+        await db.query('SELECT 1');
         res.status(200).json({ message: 'Conexão com o banco de dados está funcionando.' });
     } catch (err) {
         console.error('Erro ao verificar conexão com o banco de dados:', err);
@@ -22,11 +51,12 @@ router.get('/health', async (req, res) => {
     }
 });
 
-router.post('/Usuarios', UsuariosController.cadastrarUsuario);
+router.post('/Usuarios', upload.single('foto'), UsuariosController.cadastrarUsuario);
 router.get('/Usuarios', autenticarToken, UsuariosController.buscarUsuariosPorNome);
 router.delete('/Usuarios/:id', autenticarToken, validarId, UsuariosController.deletarUsuario);
 router.get('/Usuarios/todos', autenticarToken, UsuariosController.buscarTodosUsuarios);
 router.put('/atualizar/:id', autenticarToken, validarId, UsuariosController.atualizarUsuario);
 router.patch('/atualizar/:id', autenticarToken, validarId, UsuariosController.atualizarUsuarioParcial);
+router.post('/Usuarios/:id/foto', autenticarToken, validarId, upload.single('foto'), UsuariosController.uploadFotoUsuario);
 
 module.exports = router;

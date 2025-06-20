@@ -61,56 +61,52 @@ const UsuariosController = {
      * - Cria login, usuário, registra evento e trata upload de foto
      */
     cadastrarUsuario: async (req, res) => {
-        const conn = await db.getConnection();
+        let conn;
         try {
+            conn = await db.getConnection();
             const usuario = req.body;
-            const foto = req.file; // 📸 Pega a imagem enviada via multer
+            const arquivos = req.files || {};
 
-            // Validação de campos obrigatórios
+            // Pega os buffers dos arquivos enviados
+            const foto_blob = arquivos.foto?.[0]?.buffer || null;
+            const laudo_blob = arquivos.laudoMedico?.[0]?.buffer || null;
+
+            // Validação básica
             if (!usuario.senha || !usuario.nome || !usuario.cpf) {
                 return res.status(400).json({ error: 'Campos obrigatórios (nome, cpf, senha) não informados.' });
             }
 
             await conn.beginTransaction();
 
-            // Define tipo de usuário e valida regras de negócio
             const tipo_usuario = (usuario.tipo_usuario || 'responsavel').toLowerCase().trim();
             const idade = calcularIdade(usuario.data_nascimento);
             const erroValidacao = validarTipoUsuario(tipo_usuario, idade, usuario.id_responsavel);
+
             if (erroValidacao) {
                 await conn.rollback();
-                conn.release();
                 return res.status(400).json({ error: erroValidacao });
             }
 
-            // Criptografa a senha
             const senhaCriptografada = await bcrypt.hash(usuario.senha, 10);
 
-            // Insere login na tabela Login
-            const loginSql = `INSERT INTO Login (nome, senha, cpf) VALUES (?, ?, ?)`;
-            await conn.execute(loginSql, [usuario.nome, senhaCriptografada, usuario.cpf]);
+            await conn.execute(
+                `INSERT INTO Login (nome, senha, cpf) VALUES (?, ?, ?)`,
+                [usuario.nome, senhaCriptografada, usuario.cpf]
+            );
 
-            // Salva o buffer da imagem (foto_blob)
-            let foto_blob = null;
-            if (foto) {
-                foto_blob = foto.buffer;
-            }
-
-            // Insere usuário na tabela Usuarios
-            const usuarioSql = `
+            await conn.execute(`
                 INSERT INTO Usuarios (
-                    nome, cpf, rg, endereco, email, num_sus, bp_tratamento,
-                    bp_acompanhamento, tipo_usuario, id_responsavel, data_nascimento, foto_blob
+                    nome, cpf, rg, endereco, email, num_sus, laudo_medico, bp_acompanhamento,
+                    tipo_usuario, id_responsavel, data_nascimento, foto_blob
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `;
-            const [usuarioResult] = await conn.execute(usuarioSql, [
+            `, [
                 usuario.nome,
                 usuario.cpf,
                 usuario.rg || null,
                 usuario.endereco || null,
                 usuario.email || null,
                 usuario.num_sus || null,
-                usuario.bp_tratamento || null,
+                laudo_blob,
                 usuario.bp_acompanhamento || null,
                 tipo_usuario,
                 usuario.id_responsavel || null,
@@ -118,28 +114,15 @@ const UsuariosController = {
                 foto_blob
             ]);
 
-            const id_usuario = usuarioResult.insertId;
-
-            // Registra evento de cadastro
-            const eventoSql = `INSERT INTO EventoUsuario (id_usuario, tipo_evento) VALUES (?, ?)`;
-            await conn.execute(eventoSql, [id_usuario, 'cadastro']);
-
             await conn.commit();
-            conn.release();
-
-            return res.status(201).json({
-                message: 'Usuário cadastrado com sucesso!',
-                id: id_usuario
-            });
+            return res.status(201).json({ message: 'Usuário cadastrado com sucesso!' });
 
         } catch (err) {
-            await conn.rollback();
-            conn.release();
-            console.error('Erro ao cadastrar usuário:', err.message, err);
-            return res.status(500).json({
-                error: 'Erro ao cadastrar usuário.',
-                details: err.message
-            });
+            if (conn) await conn.rollback();
+            console.error('Erro ao cadastrar usuário:', err);
+            return res.status(500).json({ error: 'Erro ao cadastrar usuário.', details: err.message });
+        } finally {
+            if (conn) conn.release();
         }
     },
 

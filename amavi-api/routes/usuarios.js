@@ -6,22 +6,16 @@ const { autenticarToken } = require('../controllers/loginController');
 const multer = require('multer');
 const path = require('path');
 
-// Configuração do Multer para upload de imagens em memória
+// Configuração do Multer para upload de múltiplos arquivos (foto e laudo médico)
 const upload = multer({
     storage: multer.memoryStorage(),
-    fileFilter: (req, file, cb) => {
-        const filetypes = /jpeg|jpg|png/;
-        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-        const mimetype = filetypes.test(file.mimetype);
-
-        if (extname && mimetype) {
-            return cb(null, true);
-        } else {
-            cb(new Error('Apenas imagens JPEG ou PNG são permitidas!'));
-        }
-    },
-    limits: { fileSize: 5 * 1024 * 1024 } // Limite de 5MB
+    limits: { fileSize: 10 * 1024 * 1024 } // Limite de 10MB para cada arquivo
 });
+
+const multiUpload = upload.fields([
+    { name: 'foto', maxCount: 1 },
+    { name: 'laudoMedico', maxCount: 1 }
+]);
 
 function validarId(req, res, next) {
     const { id } = req.params;
@@ -41,7 +35,9 @@ router.get('/health', async (req, res) => {
     }
 });
 
-router.post('/Usuarios', upload.single('foto'), UsuariosController.cadastrarUsuario);
+// Cadastro de usuário com foto e laudo médico
+router.post('/Usuarios', multiUpload, UsuariosController.cadastrarUsuario);
+
 router.get('/Usuarios', autenticarToken, UsuariosController.buscarUsuariosPorNome);
 router.delete('/Usuarios/:id', autenticarToken, validarId, UsuariosController.deletarUsuario);
 router.get('/Usuarios/todos', autenticarToken, UsuariosController.buscarTodosUsuarios);

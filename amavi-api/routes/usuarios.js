@@ -48,5 +48,6 @@ router.get('/Usuarios/todos', autenticarToken, UsuariosController.buscarTodosUsu
 router.put('/atualizar/:id', autenticarToken, validarId, UsuariosController.atualizarUsuario);
 router.patch('/atualizar/:id', autenticarToken, validarId, UsuariosController.atualizarUsuarioParcial);
 router.post('/Usuarios/:id/foto', autenticarToken, validarId, upload.single('foto'), UsuariosController.uploadFotoUsuario);
+router.get('/Usuarios/:id', autenticarToken, validarId, UsuariosController.buscarPorId);
 
 module.exports = router;

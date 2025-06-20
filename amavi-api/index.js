@@ -24,13 +24,6 @@ app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 
-// Criar pasta de uploads se não existir
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-    console.log('📂 Pasta "uploads" criada.');
-}
-app.use('/uploads', express.static(uploadsDir));
 
 // ===== Rotas =====
 app.use('/api/usuarios', usuariosRoutes);

@@ -5,7 +5,7 @@ const UsuariosModel = {
         try {
             const sql = `
                 INSERT INTO Usuarios 
-                (nome, cpf, rg, endereco, email, num_sus, bp_tratamento, bp_acompanhamento, tipo_usuario, id_responsavel, data_nascimento, foto_url) 
+                (nome, cpf, rg, endereco, email, num_sus, bp_tratamento, bp_acompanhamento, tipo_usuario, id_responsavel, data_nascimento, foto_blob) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
             const params = [
@@ -20,7 +20,7 @@ const UsuariosModel = {
                 usuario.tipo_usuario,
                 usuario.id_responsavel,
                 usuario.data_nascimento,
-                usuario.foto_url || null   // <-- Aqui está o campo da foto
+                usuario.foto_blob || null   // <-- Salva o buffer da imagem
             ];
             const [result] = await db.execute(sql, params);
             return result;
@@ -89,7 +89,7 @@ const UsuariosModel = {
                     tipo_usuario = ?,
                     id_responsavel = ?,
                     data_nascimento = ?,
-                    foto_url = ?
+                    foto_blob = ?
                 WHERE id = ?
             `;
             const params = [
@@ -104,7 +104,7 @@ const UsuariosModel = {
                 usuario.tipo_usuario,
                 usuario.id_responsavel,
                 usuario.data_nascimento,
-                usuario.foto_url || null,
+                usuario.foto_blob || null,
                 id
             ];
             const [result] = await db.execute(sql, params);
@@ -147,10 +147,10 @@ const UsuariosModel = {
         }
     },
 
-    atualizarFoto: async (id, foto_url) => {
+    atualizarFoto: async (id, foto_blob) => {
         try {
-            const sql = `UPDATE Usuarios SET foto_url = ? WHERE id = ?`;
-            const [result] = await db.execute(sql, [foto_url, id]);
+            const sql = `UPDATE Usuarios SET foto_blob = ? WHERE id = ?`;
+            const [result] = await db.execute(sql, [foto_blob, id]);
             return result;
         } catch (err) {
             console.error('Erro ao atualizar foto do usuário:', err);

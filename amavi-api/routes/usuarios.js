@@ -5,27 +5,10 @@ const db = require('../db/db');
 const { autenticarToken } = require('../controllers/loginController');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 
-// Garante que a pasta uploads existe
-const uploadsDir = path.join(__dirname, '../uploads');
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-// Configuração do Multer para upload de imagens
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, '../uploads')); // Usa sempre a pasta uploads do projeto
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname)); // Nome único para a imagem
-    }
-});
-
+// Configuração do Multer para upload de imagens em memória
 const upload = multer({
-    storage: storage,
+    storage: multer.memoryStorage(),
     fileFilter: (req, file, cb) => {
         const filetypes = /jpeg|jpg|png/;
         const extname = filetypes.test(path.extname(file.originalname).toLowerCase());

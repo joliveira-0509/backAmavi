@@ -90,17 +90,17 @@ const UsuariosController = {
             const loginSql = `INSERT INTO Login (nome, senha, cpf) VALUES (?, ?, ?)`;
             await conn.execute(loginSql, [usuario.nome, senhaCriptografada, usuario.cpf]);
 
-            // Define URL da foto se enviada
-            let foto_url = null;
+            // Salva o buffer da imagem (foto_blob)
+            let foto_blob = null;
             if (foto) {
-                foto_url = `/uploads/${foto.filename}`;
+                foto_blob = foto.buffer;
             }
 
             // Insere usuário na tabela Usuarios
             const usuarioSql = `
                 INSERT INTO Usuarios (
                     nome, cpf, rg, endereco, email, num_sus, bp_tratamento,
-                    bp_acompanhamento, tipo_usuario, id_responsavel, data_nascimento, foto_url
+                    bp_acompanhamento, tipo_usuario, id_responsavel, data_nascimento, foto_blob
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
             const [usuarioResult] = await conn.execute(usuarioSql, [
@@ -115,7 +115,7 @@ const UsuariosController = {
                 tipo_usuario,
                 usuario.id_responsavel || null,
                 usuario.data_nascimento,
-                foto_url
+                foto_blob
             ]);
 
             const id_usuario = usuarioResult.insertId;
@@ -371,11 +371,11 @@ const UsuariosController = {
                 return res.status(400).json({ error: 'Nenhuma foto enviada.' });
             }
 
-            const foto_url = `/uploads/${foto.filename}`;
-            await UsuariosModel.atualizarFoto(id, foto_url);
+            const foto_blob = foto.buffer;
+            await UsuariosModel.atualizarFoto(id, foto_blob);
             await UsuariosModel.registrarEvento(id, 'atualizacao_foto');
 
-            return res.status(200).json({ message: 'Foto atualizada com sucesso!', foto_url });
+            return res.status(200).json({ message: 'Foto atualizada com sucesso!' });
         } catch (err) {
             console.error('Erro ao atualizar foto do usuário:', err);
             return res.status(500).json({ error: 'Erro ao atualizar foto do usuário.', details: err.message });

@@ -204,6 +204,14 @@ const UsuariosController = {
                 return res.status(404).json({ error: 'Usuário não encontrado.' });
             }
 
+            // Se houver foto_blob, converte para base64 e adiciona ao JSON
+            if (usuario.foto_blob) {
+                usuario.foto_base64 = `data:image/jpeg;base64,${usuario.foto_blob.toString('base64')}`;
+            } else {
+                usuario.foto_base64 = null;
+            }
+            delete usuario.foto_blob; // Remove o campo binário do JSON
+
             return res.status(200).json(usuario);
         } catch (err) {
             console.error('Erro ao buscar usuário por ID:', err);
@@ -336,7 +344,18 @@ const UsuariosController = {
                 return res.status(404).json({ error: 'Nenhum usuário encontrado.' });
             }
 
-            return res.status(200).json(rows);
+            // Adiciona foto_base64 em cada usuário
+            const usuariosComFoto = rows.map(usuario => {
+                if (usuario.foto_blob) {
+                    usuario.foto_base64 = `data:image/jpeg;base64,${usuario.foto_blob.toString('base64')}`;
+                } else {
+                    usuario.foto_base64 = null;
+                }
+                delete usuario.foto_blob;
+                return usuario;
+            });
+
+            return res.status(200).json(usuariosComFoto);
         } catch (err) {
             console.error('Erro ao buscar todos os usuários:', err);
             return res.status(500).json({ error: 'Erro ao buscar todos os usuários.', details: err.message });

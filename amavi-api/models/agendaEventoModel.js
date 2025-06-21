@@ -1,91 +1,90 @@
 const db = require('../db/db');
 
 const AgendaEventoModel = {
-  cadastrar: async (evento) => {
-    try {
-      const sql = `
-        INSERT INTO AgendaEvento (
-          titulo, descricao, tipo_evento, data_evento,
-          horario_evento, publico
-        ) VALUES (?, ?, ?, ?, ?, ?)
-      `;
-      const [result] = await db.execute(sql, [
-        evento.titulo,
-        evento.descricao,
-        evento.tipo_evento,
-        evento.data_evento,
-        evento.horario_evento,
-        evento.publico
-      ]);
-      return result;
-    } catch (err) {
-      console.error('Erro no model cadastrar:', err);
-      throw err;
-    }
+  // Cadastrar novo evento
+  async cadastrar(titulo, descricao, tipo_evento, data_evento, horario_evento, publico, foto_url) {
+    const sql = `
+      INSERT INTO AgendaEvento (
+        titulo, descricao, tipo_evento, data_evento, horario_evento, publico, foto_url
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+    const [result] = await db.execute(sql, [
+      titulo,
+      descricao,
+      tipo_evento,
+      data_evento,
+      horario_evento,
+      publico,
+      foto_url
+    ]);
+    return result.insertId;
   },
 
-  listarTodos: async () => {
-    try {
-      const [rows] = await db.execute('SELECT * FROM AgendaEvento');
-      return rows;
-    } catch (err) {
-      console.error('Erro no model listarTodos:', err);
-      throw err;
-    }
+  // Buscar todos os eventos
+  async listarTodos() {
+    const sql = `SELECT id, titulo, descricao, tipo_evento, data_evento, horario_evento, publico FROM AgendaEvento`; // Exclui foto_url para performance
+    const [rows] = await db.execute(sql);
+    return rows;
   },
 
-  listarPorTipo: async (tipo_evento) => {
-    try {
-      const [rows] = await db.execute('SELECT * FROM AgendaEvento WHERE tipo_evento = ?', [tipo_evento]);
-      return rows;
-    } catch (err) {
-      console.error('Erro no model listarPorTipo:', err);
-      throw err;
-    }
+  // Buscar eventos por tipo
+  async listarPorTipo(tipo_evento) {
+    const sql = `SELECT id, titulo, descricao, tipo_evento, data_evento, horario_evento, publico FROM AgendaEvento WHERE tipo_evento = ?`;
+    const [rows] = await db.execute(sql, [tipo_evento]);
+    return rows;
   },
 
-  buscarPorId: async (id) => {
-    try {
-      const [rows] = await db.execute('SELECT * FROM AgendaEvento WHERE id = ?', [id]);
-      return rows[0]; // Retorna o primeiro resultado ou undefined se não achar
-    } catch (err) {
-      console.error('Erro no model buscarPorId:', err);
-      throw err;
-    }
+  // Buscar evento por ID
+  async buscarPorId(id) {
+    const sql = `SELECT id, titulo, descricao, tipo_evento, data_evento, horario_evento, publico FROM AgendaEvento WHERE id = ?`;
+    const [rows] = await db.execute(sql, [id]);
+    return rows[0] || null;
   },
 
-  editar: async (id, evento) => {
-    try {
-      const sql = `
-        UPDATE AgendaEvento SET
-          titulo = ?, descricao = ?, tipo_evento = ?, data_evento = ?,
-          horario_evento = ?, publico = ?
-        WHERE id = ?
-      `;
-      const [result] = await db.execute(sql, [
-        evento.titulo,
-        evento.descricao,
-        evento.tipo_evento,
-        evento.data_evento,
-        evento.horario_evento,
-        evento.publico,
-        id
-      ]);
-      return result; // pode usar result.affectedRows para saber se atualizou
-    } catch (err) {
-      console.error('Erro no model editar:', err);
-      throw err;
-    }
+  // Buscar foto_url por ID
+  async buscarImagemPorId(id) {
+    const sql = `SELECT foto_url FROM AgendaEvento WHERE id = ?`;
+    const [rows] = await db.execute(sql, [id]);
+    return rows[0]?.foto_url || null;
   },
 
-  deletar: async (id) => {
-    try {
-      const [result] = await db.execute('DELETE FROM AgendaEvento WHERE id = ?', [id]);
-      return result; // result.affectedRows indica se deletou algo
-    } catch (err) {
-      console.error('Erro no model deletar:', err);
-      throw err;
+  // Atualizar evento (completo)
+  async atualizar(id, titulo, descricao, tipo_evento, data_evento, horario_evento, publico, foto_url) {
+    const sql = `
+      UPDATE AgendaEvento SET
+        titulo = ?, descricao = ?, tipo_evento = ?, data_evento = ?, horario_evento = ?, publico = ?, foto_url = ?
+      WHERE id = ?
+    `;
+    await db.execute(sql, [
+      titulo,
+      descricao,
+      tipo_evento,
+      data_evento,
+      horario_evento,
+      publico,
+      foto_url,
+      id
+    ]);
+  },
+
+  // Atualização parcial do evento
+  async atualizarParcial(id, dados) {
+    const campos = Object.keys(dados);
+    const valores = Object.values(dados);
+
+    if (campos.length === 0) {
+      throw new Error('Nenhum campo para atualizar.');
     }
+
+    const setString = campos.map(campo => `${campo} = ?`).join(', ');
+    const sql = `UPDATE AgendaEvento SET ${setString} WHERE id = ?`;
+    await db.execute(sql, [...valores, id]);
+  },
+
+  // Deletar evento
+  async deletar(id) {
+    const sql = `DELETE FROM AgendaEvento WHERE id = ?`;
+    await db.execute(sql, [id]);
   }
 };
 

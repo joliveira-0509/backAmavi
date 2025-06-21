@@ -59,9 +59,13 @@ app.use((err, req, res, next) => {
     });
 });
 
+
 // ===== Start do servidor =====
 app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando em https://amaviapi.dev.vilhena.ifro.edu.br/${PORT}`);
 });
+
+const cors = require('cors');
+app.use(cors({ origin: 'http://localhost:3000' }));
 
 module.exports = app;

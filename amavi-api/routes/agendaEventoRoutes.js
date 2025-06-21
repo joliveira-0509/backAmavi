@@ -11,11 +11,11 @@ const {
 } = require('../controllers/eventoController');
 const { autenticarToken } = require('../controllers/loginController');
 
-// Configure Multer para armazenar arquivos na memória (já que serão salvos no DB como LONGBLOB)
+// Configure Multer para armazenar arquivos na memória
 const storage = multer.memoryStorage();
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // Limite de 5MB para imagens
+  limits: { fileSize: 10 * 1024 * 1024 }, // Limite de 10MB
   fileFilter: (req, file, cb) => {
     const filetypes = /jpeg|jpg|png/;
     const mimetype = filetypes.test(file.mimetype);
@@ -29,19 +29,18 @@ const upload = multer({
 const router = express.Router();
 
 // Listar todos os eventos
-router.get('/eventos', autenticarToken, listarEventos);
+router.get('/api/evento', autenticarToken, listarEventos);
 // Listar eventos por tipo
-router.get('/eventos/tipo/:tipo_evento', autenticarToken, listarEventosPorTipo);
+router.get('/api/evento/tipo/:tipo_evento', autenticarToken, listarEventosPorTipo);
 // Buscar evento por ID
-router.get('/eventos/:id', autenticarToken, buscarEventoPorId);
+router.get('/api/evento/:id', autenticarToken, buscarEventoPorId);
 // Cadastrar evento
-router.post('/eventos', autenticarToken, upload.single('imagem'), cadastrarEvento);
+router.post('/api/evento', autenticarToken, upload.single('imagem'), cadastrarEvento);
 // Atualizar evento (completo)
-router.put('/eventos/:id', autenticarToken, upload.single('imagem'), atualizarEvento);
+router.put('/api/evento/:id', autenticarToken, upload.single('imagem'), atualizarEvento);
 // Atualizar evento parcialmente
-router.patch('/eventos/:id', autenticarToken, upload.single('imagem'), atualizarParcialEvento);
+router.patch('/api/evento/:id', autenticarToken, upload.single('imagem'), atualizarParcialEvento);
 // Deletar evento
-router.delete('/eventos/:id', autenticarToken, deletarEvento);
+router.delete('/api/evento/:id', autenticarToken, deletarEvento);
 
 module.exports = router;
-

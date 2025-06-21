@@ -20,10 +20,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ===== Middlewares globais =====
-app.use(cors());
+app.use(cors({ origin: 'http://localhost:3000' })); // Configura CORS com origem específica
 app.use(express.json());
 app.use(cookieParser());
-
 
 // ===== Rotas =====
 app.use('/api/usuarios', usuariosRoutes);
@@ -51,7 +50,7 @@ app.get('/', (req, res) => {
     }
 })();
 
-
+// ===== Manipulação de Erros =====
 app.use((err, req, res, next) => {
     console.error('❌ Erro interno:', err.stack);
     res.status(err.status || 500).json({
@@ -59,13 +58,9 @@ app.use((err, req, res, next) => {
     });
 });
 
-
 // ===== Start do servidor =====
 app.listen(PORT, () => {
-    console.log(`🚀 Servidor rodando em https://amaviapi.dev.vilhena.ifro.edu.br/${PORT}`);
+    console.log(`🚀 Servidor rodando em https://amaviapi.dev.vilhena.ifro.edu.br:${PORT}`);
 });
-
-const cors = require('cors');
-app.use(cors({ origin: 'http://localhost:3000' }));
 
 module.exports = app;

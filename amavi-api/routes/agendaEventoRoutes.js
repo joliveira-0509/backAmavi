@@ -44,3 +44,4 @@ router.patch('/eventos/:id', autenticarToken, upload.single('imagem'), atualizar
 router.delete('/eventos/:id', autenticarToken, deletarEvento);
 
 module.exports = router;
+

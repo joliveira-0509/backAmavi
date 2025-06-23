@@ -20,7 +20,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ===== Middlewares globais =====
-app.use(cors({ origin: 'http://localhost:3000' })); // Configura CORS com origem específica
+app.use(cors({ origin: 'https://amaviapi.dev.vilhena.ifro.edu.br' })); // Configura CORS com origem específica
 app.use(express.json());
 app.use(cookieParser());
 

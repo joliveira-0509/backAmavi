@@ -37,11 +37,11 @@ async function buscarEventoPorId(req, res) {
 }
 
 async function cadastrarEvento(req, res) {
-  const { titulo, descricao, tipo_evento, data_evento, horario_evento, publico } = req.body;
+  const { titulo, descricao, tipo_evento = 'default', data_evento, horario_evento, publico = 'geral' } = req.body;
   const foto_url = req.file ? `data:image/${req.file.mimetype.split('/')[1]};base64,${req.file.buffer.toString('base64')}` : null;
 
-  if (!titulo || !descricao || !tipo_evento || !data_evento || !horario_evento || !publico) {
-    return res.status(400).json({ mensagem: 'Todos os campos são obrigatórios.' });
+  if (!titulo || !descricao || !data_evento || !horario_evento) {
+    return res.status(400).json({ mensagem: 'Campos obrigatórios: título, descrição, data e horário.' });
   }
 
   try {
@@ -63,11 +63,11 @@ async function cadastrarEvento(req, res) {
 
 async function atualizarEvento(req, res) {
   const { id } = req.params;
-  const { titulo, descricao, tipo_evento, data_evento, horario_evento, publico } = req.body;
+  const { titulo, descricao, tipo_evento = 'default', data_evento, horario_evento, publico = 'geral' } = req.body;
   const foto_url = req.file ? `data:image/${req.file.mimetype.split('/')[1]};base64,${req.file.buffer.toString('base64')}` : null;
 
-  if (!titulo || !descricao || !tipo_evento || !data_evento || !horario_evento || !publico) {
-    return res.status(400).json({ mensagem: 'Todos os campos são obrigatórios.' });
+  if (!titulo || !descricao || !data_evento || !horario_evento) {
+    return res.status(400).json({ mensagem: 'Campos obrigatórios: título, descrição, data e horário.' });
   }
 
   try {

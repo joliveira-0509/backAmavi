@@ -1,9 +1,9 @@
 const express = require('express');
-res.setHeader('Access-Control-Allow-Origin', 'amaviapi.dev.vilhena.ifro.edu.br');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const fs = require('fs');
 const path = require('path');
+const multer = require('multer');
 
 const db = require('./db/db');
 
@@ -20,8 +20,16 @@ const eventoRoutes = require('./routes/eventoRoutes');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Configuração do multer
+const storage = multer.memoryStorage();
+const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }); // Limite de 10MB
+
 // ===== Middlewares globais =====
-app.use(cors({ origin: 'https://amaviapi.dev.vilhena.ifro.edu.br' })); // Configura CORS com origem específica
+app.use(cors({
+  origin: ['https://amaviapi.dev.vilhena.ifro.edu.br', 'http://localhost:3000'], // Permite frontend local
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Authorization', 'Content-Type']
+}));
 app.use(express.json());
 app.use(cookieParser());
 

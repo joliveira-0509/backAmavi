@@ -1,4 +1,5 @@
 const express = require('express');
+res.setHeader('Access-Control-Allow-Origin', 'amaviapi.dev.vilhena.ifro.edu.br');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const fs = require('fs');

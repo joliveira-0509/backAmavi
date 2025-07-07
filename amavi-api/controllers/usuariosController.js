@@ -1,6 +1,6 @@
-const bcrypt = require('bcryptjs');
-const UsuariosModel = require('../models/usuariosModel');
-const db = require('../db/db');
+const bcrypt = require('bcryptjs'); // Importa a biblioteca bcryptjs para criptografar senhas
+const UsuariosModel = require('../models/usuariosModel'); // Importa o modelo de usuários
+const db = require('../db/db'); // Importa a conexão com o banco de dados
 
 /**
  * Função auxiliar para calcular a idade a partir da data de nascimento
@@ -8,14 +8,15 @@ const db = require('../db/db');
  * @returns {number} idade calculada
  */
 function calcularIdade(dataNasc) {
-    const hoje = new Date();
-    const nascimento = new Date(dataNasc);
-    let idade = hoje.getFullYear() - nascimento.getFullYear();
-    const mes = hoje.getMonth() - nascimento.getMonth();
+    const hoje = new Date(); // Obtém a data atual
+    const nascimento = new Date(dataNasc); // Converte a data de nascimento para objeto Date
+    let idade = hoje.getFullYear() - nascimento.getFullYear(); // Calcula a idade
+    const mes = hoje.getMonth() - nascimento.getMonth(); // Calcula a diferença de meses
+    // Ajusta a idade se o aniversário ainda não ocorreu este ano
     if (mes < 0 || (mes === 0 && hoje.getDate() < nascimento.getDate())) {
         idade--;
     }
-    return idade;
+    return idade; // Retorna a idade calculada
 }
 
 /**
@@ -26,15 +27,18 @@ function calcularIdade(dataNasc) {
  * @returns {string|null} Mensagem de erro ou null se válido
  */
 function validarTipoUsuario(tipo_usuario, idade, id_responsavel) {
-    const tiposValidos = ['responsavel', 'usuario', 'dependente'];
+    const tiposValidos = ['responsavel', 'usuario', 'dependente']; // Tipos de usuários válidos
+    // Verifica se o tipo de usuário é válido
     if (!tiposValidos.includes(tipo_usuario)) {
         return `Tipo de usuário inválido. Valores permitidos: ${tiposValidos.join(', ')}`;
     }
 
+    // Valida se o usuário do tipo "usuario" é maior de idade
     if (tipo_usuario === 'usuario' && idade < 18) {
         return 'Usuário do tipo "usuario" deve ser maior de idade.';
     }
 
+    // Valida se o usuário do tipo "dependente" é menor de idade e se possui responsável
     if (tipo_usuario === 'dependente') {
         if (idade >= 18) {
             return 'Usuário do tipo "dependente" deve ser menor de idade.';
@@ -44,11 +48,12 @@ function validarTipoUsuario(tipo_usuario, idade, id_responsavel) {
         }
     }
 
+    // Valida se o usuário do tipo "responsavel" não deve ter um responsável
     if (tipo_usuario === 'responsavel' && id_responsavel) {
         return 'Usuários do tipo "responsavel" não devem possuir id_responsavel.';
     }
 
-    return null;
+    return null; // Retorna null se todas as validações passarem
 }
 
 // Controlador de Usuários com métodos para CRUD e validações
@@ -72,14 +77,14 @@ const UsuariosController = {
 
             console.log('Campos de arquivo recebidos:', Object.keys(req.files || {}));
 
-            conn = await db.getConnection();
+            conn = await db.getConnection(); // Obtém uma conexão com o banco de dados
             const usuario = { ...req.body }; // Cria uma cópia de req.body
             // Remove pontos e traços do CPF
             if (usuario.cpf) {
                 usuario.cpf = usuario.cpf.replace(/[.\-]/g, '');
             }
 
-            const arquivos = req.files || {};
+            const arquivos = req.files || {}; // Obtém os arquivos enviados
 
             // Pega os buffers dos arquivos enviados
             const foto_blob = arquivos.foto?.[0]?.buffer || null;
@@ -94,7 +99,7 @@ const UsuariosController = {
 
             // Validação de campos obrigatórios
             if (!usuario.nome || !usuario.cpf || !usuario.senha) {
-                await conn.rollback();
+                await conn.rollback(); // Desfaz a transação em caso de erro
                 return res.status(400).json({ error: 'Campos obrigatórios (nome, cpf, senha) não informados.' });
             }
 
@@ -117,24 +122,26 @@ const UsuariosController = {
                 return res.status(400).json({ error: 'CPF já cadastrado.' });
             }
 
-            await conn.beginTransaction();
+            await conn.beginTransaction(); // Inicia uma transação
 
-            const tipo_usuario = (usuario.tipo_usuario || 'responsavel').toLowerCase().trim();
-            const idade = calcularIdade(usuario.data_nascimento);
-            const erroValidacao = validarTipoUsuario(tipo_usuario, idade, usuario.id_responsavel);
+            const tipo_usuario = (usuario.tipo_usuario || 'responsavel').toLowerCase().trim(); // Define o tipo de usuário
+            const idade = calcularIdade(usuario.data_nascimento); // Calcula a idade
+            const erroValidacao = validarTipoUsuario(tipo_usuario, idade, usuario.id_responsavel); // Valida o tipo de usuário
 
             if (erroValidacao) {
                 await conn.rollback();
                 return res.status(400).json({ error: erroValidacao });
             }
 
-            const senhaCriptografada = await bcrypt.hash(usuario.senha, 10);
+            const senhaCriptografada = await bcrypt.hash(usuario.senha, 10); // Criptografa a senha
 
+            // Insere o usuário na tabela Login
             await conn.execute(
                 `INSERT INTO Login (nome, senha, cpf) VALUES (?, ?, ?)`,
                 [usuario.nome, senhaCriptografada, usuario.cpf]
             );
 
+            // Insere os dados do usuário na tabela Usuarios
             await conn.execute(`
                 INSERT INTO Usuarios (
                     nome, cpf, telefone, rg, profissao, endereco, rua, numero, cidade, estado, cep, sexo, email, num_sus, laudo_medico, informacoes_medicas, senha, bp_acompanhamento, tipo_usuario, id_responsavel, data_nascimento, foto_blob, criado_em
@@ -165,11 +172,11 @@ const UsuariosController = {
                 usuario.criado_em || new Date()
             ]);
 
-            await conn.commit();
+            await conn.commit(); // Confirma a transação
             return res.status(201).json({ message: 'Usuário cadastrado com sucesso!' });
 
         } catch (err) {
-            if (conn) await conn.rollback();
+            if (conn) await conn.rollback(); // Desfaz a transação em caso de erro
             if (err.name === 'MulterError' && err.code === 'LIMIT_UNEXPECTED_FILE') {
                 console.log('Erro de campo inesperado (multer):', err);
                 return res.status(400).json({ error: 'Campo de arquivo inesperado enviado.' });
@@ -177,7 +184,7 @@ const UsuariosController = {
             console.error('Erro ao cadastrar usuário:', err);
             return res.status(500).json({ error: 'Erro ao cadastrar usuário.', details: err.message });
         } finally {
-            if (conn) conn.release();
+            if (conn) conn.release(); // Libera a conexão com o banco de dados
         }
     },
 
@@ -187,8 +194,8 @@ const UsuariosController = {
      */
     buscarUsuariosPorNome: async (req, res) => {
         try {
-            const { nome } = req.query;
-            const usuarioLogado = req.usuario;
+            const { nome } = req.query; // Obtém o nome da query
+            const usuarioLogado = req.usuario; // Obtém o usuário logado
 
             // Validação do parâmetro nome
             if (!nome) {
@@ -215,7 +222,7 @@ const UsuariosController = {
                 return res.status(200).json(filtrado);
             }
 
-            return res.status(200).json(results);
+            return res.status(200).json(results); // Retorna os resultados encontrados
         } catch (err) {
             console.error('Erro ao buscar usuários:', err);
             return res.status(500).json({ error: 'Erro ao buscar usuários.', details: err.message });
@@ -227,8 +234,8 @@ const UsuariosController = {
      * - Apenas o próprio usuário ou administradores podem buscar
      */
     buscarPorId: async (req, res) => {
-        const { id } = req.params;
-        const usuarioLogado = req.usuario;
+        const { id } = req.params; // Obtém o ID da URL
+        const usuarioLogado = req.usuario; // Obtém o usuário logado
 
         try {
             // Restringe acesso para não administradores
@@ -248,9 +255,9 @@ const UsuariosController = {
             } else {
                 usuario.foto_base64 = null;
             }
-            delete usuario.foto_blob;
+            delete usuario.foto_blob; // Remove o campo foto_blob
 
-            return res.status(200).json(usuario);
+            return res.status(200).json(usuario); // Retorna o usuário encontrado
         } catch (err) {
             console.error('Erro ao buscar usuário por ID:', err);
             return res.status(500).json({ error: 'Erro ao buscar usuário por ID.', details: err.message });
@@ -262,9 +269,9 @@ const UsuariosController = {
      * - Apenas o próprio usuário ou administradores podem atualizar
      */
     atualizarUsuario: async (req, res) => {
-        const { id } = req.params;
-        const usuarioLogado = req.usuario;
-        const usuario = { ...req.body };
+        const { id } = req.params; // Obtém o ID da URL
+        const usuarioLogado = req.usuario; // Obtém o usuário logado
+        const usuario = { ...req.body }; // Cria uma cópia dos dados do usuário
 
         try {
             if (!id) {
@@ -305,9 +312,9 @@ const UsuariosController = {
      * - Apenas o próprio usuário ou administradores podem atualizar
      */
     atualizarUsuarioParcial: async (req, res) => {
-        const { id } = req.params;
-        const usuarioLogado = req.usuario;
-        const campos = { ...req.body };
+        const { id } = req.params; // Obtém o ID da URL
+        const usuarioLogado = req.usuario; // Obtém o usuário logado
+        const campos = { ...req.body }; // Cria uma cópia dos campos a serem atualizados
 
         try {
             if (!id) {
@@ -348,8 +355,8 @@ const UsuariosController = {
      * - Apenas o próprio usuário ou administradores podem deletar
      */
     deletarUsuario: async (req, res) => {
-        const { id } = req.params;
-        const usuarioLogado = req.usuario;
+        const { id } = req.params; // Obtém o ID da URL
+        const usuarioLogado = req.usuario; // Obtém o usuário logado
 
         try {
             if (!id) {
@@ -387,8 +394,8 @@ const UsuariosController = {
             return res.status(403).json({ error: 'Acesso negado.' });
         }
         try {
-            const sql = `SELECT * FROM Usuarios`;
-            const [rows] = await db.execute(sql);
+            const sql = `SELECT * FROM Usuarios`; // Consulta SQL para buscar todos os usuários
+            const [rows] = await db.execute(sql); // Executa a consulta
 
             if (rows.length === 0) {
                 return res.status(404).json({ error: 'Nenhum usuário encontrado.' });
@@ -401,11 +408,11 @@ const UsuariosController = {
                 } else {
                     usuario.foto_base64 = null;
                 }
-                delete usuario.foto_blob;
-                return usuario;
+                delete usuario.foto_blob; // Remove o campo foto_blob
+                return usuario; // Retorna o usuário modificado
             });
 
-            return res.status(200).json(usuariosComFoto);
+            return res.status(200).json(usuariosComFoto); // Retorna a lista de usuários
         } catch (err) {
             console.error('Erro ao buscar todos os usuários:', err);
             return res.status(500).json({ error: 'Erro ao buscar todos os usuários.', details: err.message });
@@ -416,9 +423,9 @@ const UsuariosController = {
      * Atualiza apenas a foto do usuário
      */
     uploadFotoUsuario: async (req, res) => {
-        const { id } = req.params;
-        const usuarioLogado = req.usuario;
-        const foto = req.file;
+        const { id } = req.params; // Obtém o ID da URL
+        const usuarioLogado = req.usuario; // Obtém o usuário logado
+        const foto = req.file; // Obtém a foto enviada
 
         try {
             // Tratamento para erro de campo inesperado do multer
@@ -446,11 +453,11 @@ const UsuariosController = {
                 return res.status(400).json({ error: 'Nenhuma foto enviada.' });
             }
 
-            const foto_blob = foto.buffer;
-            await UsuariosModel.atualizarFoto(id, foto_blob);
-            await UsuariosModel.registrarEvento(id, 'atualizacao_foto');
+            const foto_blob = foto.buffer; // Obtém o buffer da foto
+            await UsuariosModel.atualizarFoto(id, foto_blob); // Atualiza a foto do usuário
+            await UsuariosModel.registrarEvento(id, 'atualizacao_foto'); // Registra o evento de atualização
 
-            return res.status(200).json({ message: 'Foto atualizada com sucesso!' });
+            return res.status(200).json({ message: 'Foto atualizada com sucesso!' }); // Retorna sucesso
         } catch (err) {
             if (err.name === 'MulterError' && err.code === 'LIMIT_UNEXPECTED_FILE') {
                 console.log('Erro de campo inesperado (multer):', err);

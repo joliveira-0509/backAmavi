@@ -1,5 +1,3 @@
-// loginController.js
-
 const jwt = require('jsonwebtoken');
 const db = require('../db/db');
 const bcrypt = require('bcryptjs');
@@ -8,7 +6,6 @@ const SECRET_KEY = process.env.SECRET_KEY || 'sua_chave_secreta';
 
 /**
  * Valida o CPF informado.
- * Retorna true se válido, false caso contrário.
  */
 function validateCPF(cpf) {
     cpf = cpf.replace(/[^\d]+/g, '');
@@ -28,35 +25,29 @@ function validateCPF(cpf) {
 }
 
 /**
- * Realiza o login do usuário.
- * Valida CPF, senha e gera token JWT.
+ * Realiza login do usuário e retorna dados no token.
  */
 exports.login = async (req, res) => {
     const { cpf, senha } = req.body;
 
-    // Verifica se CPF e senha foram enviados
     if (!cpf || !senha) {
         return res.status(400).json({ error: 'CPF e senha são obrigatórios.' });
     }
-    // Valida o formato do CPF
     if (!validateCPF(cpf)) {
         return res.status(400).json({ error: 'CPF inválido.' });
     }
 
     try {
-        // Busca usuário pelo CPF
         const usuarioLogin = await LoginModel.buscarPorCpf(cpf);
         if (!usuarioLogin) {
-            return res.status(401).json({ message: 'Usuário não encontrado. Verifique o CPF informado.' });
+            return res.status(401).json({ message: 'Usuário não encontrado.' });
         }
 
-        // Compara senha informada com a senha salva (criptografada)
         const senhaValida = await bcrypt.compare(senha, usuarioLogin.senha);
         if (!senhaValida) {
-            return res.status(401).json({ message: 'Senha incorreta. Tente novamente.' });
+            return res.status(401).json({ message: 'Senha incorreta.' });
         }
 
-        // Gera token JWT
         const token = jwt.sign(
             {
                 id: usuarioLogin.id,
@@ -67,7 +58,6 @@ exports.login = async (req, res) => {
             { expiresIn: '1h' }
         );
 
-        // Define cookie seguro com o token
         res.cookie('token', token, {
             httpOnly: true,
             maxAge: 3600000,
@@ -76,168 +66,136 @@ exports.login = async (req, res) => {
         });
 
         res.status(200).json({
-            message: `Login bem-sucedido como ${usuarioLogin.tipo_usuario === 'Adm' ? 'administrador' : 'usuário'}.`,
-            tipo_usuario: usuarioLogin.tipo_usuario,
-            token
+            message: 'Login bem-sucedido.',
+            usuario: {
+                id: usuarioLogin.id,
+                nome: usuarioLogin.nome,
+                cpf: usuarioLogin.cpf,
+                tipo_usuario: usuarioLogin.tipo_usuario
+            }
         });
 
     } catch (err) {
-        // Log detalhado do erro para debug
         console.error('Erro ao realizar login:', err);
-        res.status(500).json({ error: 'Erro interno no servidor ao tentar realizar login.' });
+        res.status(500).json({ error: 'Erro interno ao realizar login.' });
     }
 };
 
-/**
- * Realiza logout limpando o cookie do token.
- */
 exports.logout = (req, res) => {
     res.clearCookie('token');
     res.status(200).json({ message: 'Logout realizado com sucesso.' });
 };
 
-/**
- * Atualiza a senha do usuário autenticado.
- * Exige senha atual e nova senha.
- */
 exports.atualizarSenha = async (req, res) => {
     const { senha_atual, nova_senha } = req.body;
-    const token = req.cookies.token;
 
-    if (!token) {
-        return res.status(401).json({ error: 'Token não fornecido. Faça login novamente.' });
-    }
+    if (!req.usuario) return res.status(401).json({ error: 'Usuário não autenticado.' });
 
     try {
-        // Decodifica token e busca usuário
-        const decoded = jwt.verify(token, SECRET_KEY);
-        const usuarioLogin = await LoginModel.buscarPorCpf(decoded.cpf);
-
+        const usuarioLogin = await LoginModel.buscarPorCpf(req.usuario.cpf);
         if (!usuarioLogin) {
-            return res.status(404).json({ error: 'Usuário não encontrado para atualização de senha.' });
+            return res.status(404).json({ error: 'Usuário não encontrado.' });
         }
 
-        // Verifica se a senha atual está correta
         const senhaCorreta = await bcrypt.compare(senha_atual, usuarioLogin.senha);
         if (!senhaCorreta) {
             return res.status(401).json({ error: 'Senha atual incorreta.' });
         }
 
-        // Criptografa nova senha e atualiza no banco
         const senhaCriptografada = await bcrypt.hash(nova_senha, 10);
-
         const sql = `UPDATE Login SET senha = ? WHERE cpf = ?`;
-        await db.execute(sql, [senhaCriptografada, decoded.cpf]);
+        await db.execute(sql, [senhaCriptografada, req.usuario.cpf]);
 
         res.status(200).json({ message: 'Senha atualizada com sucesso.' });
 
     } catch (err) {
         console.error('Erro ao atualizar senha:', err);
-        res.status(500).json({ error: 'Erro interno ao atualizar senha. Tente novamente mais tarde.' });
+        res.status(500).json({ error: 'Erro interno ao atualizar senha.' });
     }
 };
 
-/**
- * Cadastra um novo administrador.
- * Exige CPF, senha e nome.
- */
 exports.cadastrarAdm = async (req, res) => {
     const { cpf, senha, nome } = req.body;
 
-    // Valida campos obrigatórios
     if (!cpf || !senha || !nome) {
         return res.status(400).json({ error: 'CPF, senha e nome são obrigatórios.' });
     }
 
-    // Valida CPF
     if (!validateCPF(cpf)) {
         return res.status(400).json({ error: 'CPF inválido.' });
     }
 
     try {
-        // Verifica se já existe usuário com o CPF informado
         const usuarioExistente = await LoginModel.buscarPorCpf(cpf);
         if (usuarioExistente) {
             return res.status(400).json({ error: 'Este CPF já está cadastrado.' });
         }
 
-        // Criptografa senha antes de salvar
         const senhaCriptografada = await bcrypt.hash(senha, 10);
 
         const novoAdm = { cpf, senha: senhaCriptografada, tipo_usuario: 'Adm', nome };
-
         const adminCriado = await LoginModel.criarLogin(novoAdm);
 
         res.status(201).json({ message: 'Administrador cadastrado com sucesso!', admin: adminCriado });
     } catch (err) {
         console.error('Erro ao cadastrar administrador:', err);
-        res.status(500).json({ error: 'Erro interno ao cadastrar administrador. Verifique os dados e tente novamente.' });
+        res.status(500).json({ error: 'Erro interno ao cadastrar administrador.' });
     }
 };
 
-/**
- * Deleta um administrador pelo CPF.
- */
 exports.deletarAdm = async (req, res) => {
     const { cpf } = req.params;
 
-    if (!cpf) {
-        return res.status(400).json({ error: 'CPF é obrigatório.' });
-    }
-
-    if (!validateCPF(cpf)) {
-        return res.status(400).json({ error: 'CPF inválido.' });
-    }
+    if (!cpf) return res.status(400).json({ error: 'CPF é obrigatório.' });
+    if (!validateCPF(cpf)) return res.status(400).json({ error: 'CPF inválido.' });
 
     try {
-        // Busca usuário e verifica se é administrador
         const usuario = await LoginModel.buscarPorCpf(cpf);
         if (!usuario || usuario.tipo_usuario !== 'Adm') {
             return res.status(404).json({ error: 'Administrador não encontrado.' });
         }
 
         await LoginModel.deletarPorCpf(cpf);
-
         res.status(200).json({ message: 'Administrador deletado com sucesso.' });
     } catch (err) {
         console.error('Erro ao deletar administrador:', err);
-        res.status(500).json({ error: 'Erro interno ao deletar administrador. Tente novamente.' });
+        res.status(500).json({ error: 'Erro interno ao deletar administrador.' });
     }
 };
 
 /**
- * Middleware para autenticar token JWT (protege rotas privadas).
+ * Middleware para autenticação via JWT.
  */
 exports.autenticarToken = (req, res, next) => {
-    // Tenta obter token do cookie ou do header Authorization
     const token = req.cookies.token || req.headers['authorization']?.split(' ')[1];
 
-    if (!token) {
-        return res.status(401).json({ error: 'Token não fornecido. Acesso negado.' });
-    }
+    if (!token) return res.status(401).json({ error: 'Token não fornecido.' });
 
     try {
-        // Valida token
         const decoded = jwt.verify(token, SECRET_KEY);
         req.usuario = decoded;
         next();
     } catch (err) {
-        return res.status(401).json({ error: 'Token inválido ou expirado. Faça login novamente.' });
+        return res.status(401).json({ error: 'Token inválido ou expirado.' });
     }
 };
 
 /**
- * Verifica se o usuário está autenticado e retorna seus dados.
+ * Middleware para verificar se é administrador.
+ */
+exports.somenteAdmin = (req, res, next) => {
+    if (req.usuario?.tipo_usuario !== 'Adm') {
+        return res.status(403).json({ error: 'Acesso restrito a administradores.' });
+    }
+    next();
+};
+
+/**
+ * Verifica os dados do usuário logado.
  */
 exports.verificarLogin = async (req, res) => {
     try {
-        const token = req.cookies.token;
-        if (!token) {
-            return res.status(401).json({ erro: 'Usuário não autenticado. Faça login.' });
-        }
-
-        const decoded = jwt.verify(token, SECRET_KEY);
-        const usuario = await LoginModel.buscarPorCpf(decoded.cpf);
+        const usuario = await LoginModel.buscarPorCpf(req.usuario.cpf);
 
         if (!usuario) {
             return res.status(404).json({ erro: 'Usuário não encontrado.' });
@@ -251,6 +209,6 @@ exports.verificarLogin = async (req, res) => {
         });
     } catch (err) {
         console.error('Erro na verificação do login:', err);
-        return res.status(401).json({ erro: 'Token inválido ou expirado. Faça login novamente.' });
+        return res.status(401).json({ erro: 'Token inválido ou expirado.' });
     }
 };

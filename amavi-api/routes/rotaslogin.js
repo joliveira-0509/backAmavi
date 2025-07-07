@@ -14,8 +14,8 @@ router.put('/atualizarsenha', loginController.autenticarToken, loginController.a
 // Rota para cadastro de administrador
 router.post('/cadastrar-adm', loginController.cadastrarAdm);
 
-// Rota para deletar administrador
-router.delete('/deletar-adm/:cpf', loginController.deletarAdm);
+// Rota para deletar administrador (protegida e restrita a Adm)
+router.delete('/deletar-adm/:cpf', loginController.autenticarToken, loginController.somenteAdmin, loginController.deletarAdm);
 
 // Rota para verificar login (protegida)
 router.get('/verificar-login', loginController.autenticarToken, loginController.verificarLogin);

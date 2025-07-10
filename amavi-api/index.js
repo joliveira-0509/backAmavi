@@ -26,12 +26,9 @@ const upload = multer({
 
 // ========== Middlewares Globais ==========
 app.use(cors({
-  origin: ['https://amaviapi.dev.vilhena.ifro.edu.br', 'http://localhost:3000'],
-  credentials: true, // Permite cookies cross-origin
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Authorization', 'Content-Type']
+  origin: ['https://amavi.dev.vilhena.ifro.edu.br', 'http://localhost:3000'], // ← frontend correto
+  credentials: true,
 }));
-
 app.use(express.json());
 app.use(cookieParser());
 

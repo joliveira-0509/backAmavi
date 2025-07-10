@@ -29,55 +29,63 @@ function validateCPF(cpf) {
  */
 exports.login = async (req, res) => {
     const { cpf, senha } = req.body;
-
-    if (!cpf || !senha) {
-        return res.status(400).json({ error: 'CPF e senha são obrigatórios.' });
-    }
-    if (!validateCPF(cpf)) {
-        return res.status(400).json({ error: 'CPF inválido.' });
-    }
+    const conn = await db.getConnection();
 
     try {
-        const usuarioLogin = await LoginModel.buscarPorCpf(cpf);
-        if (!usuarioLogin) {
-            return res.status(401).json({ message: 'Usuário não encontrado.' });
-        }
-
-        const senhaValida = await bcrypt.compare(senha, usuarioLogin.senha);
-        if (!senhaValida) {
-            return res.status(401).json({ message: 'Senha incorreta.' });
-        }
-
-        const token = jwt.sign(
-            {
-                id: usuarioLogin.id,
-                cpf: usuarioLogin.cpf,
-                tipo_usuario: usuarioLogin.tipo_usuario
-            },
-            SECRET_KEY,
-            { expiresIn: '1h' }
+        const [result] = await conn.execute(
+            'SELECT * FROM Login WHERE cpf = ?',
+            [cpf]
         );
 
-            res.cookie('token', token, {
-        httpOnly: true,
-        maxAge: 3600000,
-        secure: true, // precisa ser true em ambiente HTTPS
-        sameSite: 'None' // permite envio de cookies entre domínios diferentes
+        if (result.length === 0) {
+            return res.status(401).json({ error: 'CPF ou senha inválidos.' });
+        }
+
+        const loginData = result[0];
+        const senhaCorreta = await bcrypt.compare(senha, loginData.senha);
+
+        if (!senhaCorreta) {
+            return res.status(401).json({ error: 'CPF ou senha inválidos.' });
+        }
+
+        // Buscar dados adicionais na tabela Usuarios
+        const [usuarioRows] = await conn.execute(
+            'SELECT id, nome, tipo_usuario FROM Usuarios WHERE cpf = ?',
+            [cpf]
+        );
+
+        const usuario = usuarioRows[0];
+        if (!usuario) {
+            return res.status(404).json({ error: 'Usuário não encontrado.' });
+        }
+
+        const payload = {
+            id: usuario.id,
+            nome: usuario.nome,
+            tipo_usuario: usuario.tipo_usuario,
+            cpf: cpf
+        };
+
+        const token = jwt.sign(payload, process.env.SECRET_KEY || 'sua_chave_secreta', {
+            expiresIn: '4h'
+        });
+
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production', // true só em produção
+            sameSite: 'None',
+            maxAge: 1000 * 60 * 60 * 4
         });
 
         res.status(200).json({
             message: 'Login bem-sucedido.',
-            usuario: {
-                id: usuarioLogin.id,
-                nome: usuarioLogin.nome,
-                cpf: usuarioLogin.cpf,
-                tipo_usuario: usuarioLogin.tipo_usuario
-            }
+            usuario: payload
         });
-
     } catch (err) {
-        console.error('Erro ao realizar login:', err);
-        res.status(500).json({ error: 'Erro interno ao realizar login.' });
+        console.error('Erro no login:', err);
+        res.status(500).json({ error: 'Erro no login.' });
+    } finally {
+        conn.release();
     }
 };
 

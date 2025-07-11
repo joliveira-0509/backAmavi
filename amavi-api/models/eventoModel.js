@@ -1,63 +1,47 @@
 const db = require('../db/db');
 
-const Evento = {
-  // Criar evento
-  create: async (dados) => {
+const AgendaEventoModel = {
+  listarTodos: async () => {
+    const [result] = await db.execute('SELECT * FROM AgendaEvento');
+    return result;
+  },
+
+  listarPorTipo: async (tipo) => {
+    const [result] = await db.execute('SELECT * FROM AgendaEvento WHERE tipo_evento = ?', [tipo]);
+    return result;
+  },
+
+  buscarPorId: async (id) => {
+    const [result] = await db.execute('SELECT * FROM AgendaEvento WHERE id = ?', [id]);
+    return result[0];
+  },
+
+  buscarImagemPorId: async (id) => {
+    const [result] = await db.execute('SELECT foto_url FROM AgendaEvento WHERE id = ?', [id]);
+    return result[0]?.foto_url || null;
+  },
+
+  cadastrar: async (titulo, descricao, tipo_evento, data_evento, horario_evento, publico, foto_url) => {
     const sql = `
-      INSERT INTO AgendaEvento
-      (titulo, descricao, tipo_evento, data_evento, horario_evento, publico, criado_em)
-      VALUES (?, ?, ?, ?, ?, ?, NOW())
+      INSERT INTO AgendaEvento (titulo, descricao, tipo_evento, data_evento, horario_evento, publico, criado_em, foto_url)
+      VALUES (?, ?, ?, ?, ?, ?, NOW(), ?)
     `;
-    const valores = [
-      dados.titulo,
-      dados.descricao,
-      dados.tipo_evento,
-      dados.data_evento,
-      dados.horario_evento,
-      dados.publico
-    ];
-
-    const [resultado] = await db.execute(sql, valores);
-    return resultado;
+    const [result] = await db.execute(sql, [titulo, descricao, tipo_evento, data_evento, horario_evento, publico, foto_url]);
+    return result.insertId;
   },
 
-  // Listar todos eventos
-  findAll: async () => {
-    const sql = 'SELECT * FROM AgendaEvento';
-    const [eventos] = await db.execute(sql);
-    return eventos;
-  },
-
-  // Buscar evento por ID
-  findById: async (id) => {
-    const sql = 'SELECT * FROM AgendaEvento WHERE id = ?';
-    const [eventos] = await db.execute(sql, [id]);
-    return eventos[0];
-  },
-
-  // Atualizar evento inteiro
-  update: async (id, dados) => {
+  atualizar: async (id, titulo, descricao, tipo_evento, data_evento, horario_evento, publico, foto_url) => {
     const sql = `
       UPDATE AgendaEvento SET
-      titulo = ?, descricao = ?, tipo_evento = ?, data_evento = ?,
-      horario_evento = ?, publico = ?
+        titulo = ?, descricao = ?, tipo_evento = ?, data_evento = ?,
+        horario_evento = ?, publico = ?, foto_url = ?
       WHERE id = ?
     `;
-    const valores = [
-      dados.titulo,
-      dados.descricao,
-      dados.tipo_evento,
-      dados.data_evento,
-      dados.horario_evento,
-      dados.publico,
-      id
-    ];
-    const [resultado] = await db.execute(sql, valores);
-    return resultado;
+    const [result] = await db.execute(sql, [titulo, descricao, tipo_evento, data_evento, horario_evento, publico, foto_url, id]);
+    return result;
   },
 
-  // Atualizar parcialmente (campos dinâmicos)
-  updatePartial: async (id, campos) => {
+  atualizarParcial: async (id, campos) => {
     let sql = 'UPDATE AgendaEvento SET ';
     const sets = [];
     const valores = [];
@@ -67,20 +51,18 @@ const Evento = {
       valores.push(value);
     }
 
-    sql += sets.join(', ');
-    sql += ' WHERE id = ?';
+    sql += sets.join(', ') + ' WHERE id = ?';
     valores.push(id);
 
-    const [resultado] = await db.execute(sql, valores);
-    return resultado;
+    const [result] = await db.execute(sql, valores);
+    return result;
   },
 
-  // Deletar evento
-  delete: async (id) => {
-    const sql = 'DELETE FROM AgendaEvento WHERE id = ?';
-    const [resultado] = await db.execute(sql, [id]);
-    return resultado;
+  deletar: async (id) => {
+    const [result] = await db.execute('DELETE FROM AgendaEvento WHERE id = ?', [id]);
+    return result;
   }
 };
 
-module.exports = Evento;
+module.exports = AgendaEventoModel;
+

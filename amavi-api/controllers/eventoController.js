@@ -25,9 +25,7 @@ async function buscarEventoPorId(req, res) {
   const { id } = req.params;
   try {
     const evento = await AgendaEventoModel.buscarPorId(id);
-    if (!evento) {
-      return res.status(404).json({ mensagem: 'Evento não encontrado.' });
-    }
+    if (!evento) return res.status(404).json({ mensagem: 'Evento não encontrado.' });
     const foto_url = await AgendaEventoModel.buscarImagemPorId(id);
     res.json({ ...evento, foto_url });
   } catch (error) {
@@ -38,22 +36,14 @@ async function buscarEventoPorId(req, res) {
 
 async function cadastrarEvento(req, res) {
   const { titulo, descricao, tipo_evento = 'default', data_evento, horario_evento, publico = 'geral' } = req.body;
-  const foto_url = req.file ? `data:image/${req.file.mimetype.split('/')[1]};base64,${req.file.buffer.toString('base64')}` : null;
+  const foto_url = req.file ? req.file.buffer : null;
 
   if (!titulo || !descricao || !data_evento || !horario_evento) {
     return res.status(400).json({ mensagem: 'Campos obrigatórios: título, descrição, data e horário.' });
   }
 
   try {
-    const insertId = await AgendaEventoModel.cadastrar(
-      titulo,
-      descricao,
-      tipo_evento,
-      data_evento,
-      horario_evento,
-      publico,
-      foto_url
-    );
+    const insertId = await AgendaEventoModel.cadastrar(titulo, descricao, tipo_evento, data_evento, horario_evento, publico, foto_url);
     res.status(201).json({ mensagem: 'Evento cadastrado com sucesso!', id: insertId });
   } catch (error) {
     console.error('Erro ao cadastrar evento:', error);
@@ -64,7 +54,7 @@ async function cadastrarEvento(req, res) {
 async function atualizarEvento(req, res) {
   const { id } = req.params;
   const { titulo, descricao, tipo_evento = 'default', data_evento, horario_evento, publico = 'geral' } = req.body;
-  const foto_url = req.file ? `data:image/${req.file.mimetype.split('/')[1]};base64,${req.file.buffer.toString('base64')}` : null;
+  const foto_url = req.file ? req.file.buffer : null;
 
   if (!titulo || !descricao || !data_evento || !horario_evento) {
     return res.status(400).json({ mensagem: 'Campos obrigatórios: título, descrição, data e horário.' });
@@ -83,7 +73,7 @@ async function atualizarParcialEvento(req, res) {
   const { id } = req.params;
   const campos = req.body;
   if (req.file) {
-    campos.foto_url = `data:image/${req.file.mimetype.split('/')[1]};base64,${req.file.buffer.toString('base64')}`;
+    campos.foto_url = req.file.buffer;
   }
 
   if (Object.keys(campos).length === 0) {

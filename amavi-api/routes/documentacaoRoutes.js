@@ -8,7 +8,7 @@ const {
   atualizarDocumento,
   editarParcialDocumento,
   deletarDocumento
-} = require('../controllers/DocumentacaoController');
+} = require('../controllers/documentacaoController');
 const { autenticarToken } = require('../controllers/loginController');
 
 // Configure Multer para armazenar arquivos na memória (já que serão salvos no DB como LONGBLOB)

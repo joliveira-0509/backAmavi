@@ -1,78 +1,24 @@
-const db = require('../db/db');
+const express = require('express');
+const router = express.Router();
+const SolicitacaoAtendimentoController = require('../controllers/solicitacaoAtendimentoController');
+const { autenticarToken } = require('../controllers/loginController'); // <-- Adicione aqui
 
-const SolicitacaoAtendimentoModel = {
-    // Cadastrar uma nova solicitação
-    cadastrar: async (dados) => {
-        const sql = `
-            INSERT INTO SolicitacaoAtendimento (
-                id_usuario, descricao, classificacao, id_documentacao
-            ) VALUES (?, ?, ?, ?)
-        `;
-        const [result] = await db.execute(sql, [
-            dados.id_usuario,
-            dados.descricao,
-            dados.classificacao,
-            dados.id_documentacao || null // aceita null se não enviado
-        ]);
-        return result.insertId;
-    },
+// Criar uma nova solicitação (requerimento)
+router.post('/solicitacao', autenticarToken, SolicitacaoAtendimentoController.cadastrar);
 
-    // Listar todas as solicitações
-    listarTodas: async () => {
-        const [rows] = await db.execute('SELECT * FROM SolicitacaoAtendimento');
-        return rows;
-    },
+// Listar todas as solicitações
+router.get('/solicitacao', autenticarToken, SolicitacaoAtendimentoController.listarTodas);
 
-    // Buscar solicitação por ID
-    buscarPorId: async (id) => {
-        const [rows] = await db.execute('SELECT * FROM SolicitacaoAtendimento WHERE id = ?', [id]);
-        return rows[0];
-    },
+// Buscar solicitação por ID
+router.get('/solicitacao/:id', autenticarToken, SolicitacaoAtendimentoController.buscarPorId);
 
-    // Buscar todas as solicitações de um usuário
-    buscarPorUsuario: async (id_usuario) => {
-        const [rows] = await db.execute('SELECT * FROM SolicitacaoAtendimento WHERE id_usuario = ?', [id_usuario]);
-        return rows;
-    },
+// Buscar solicitações por usuário
+router.get('/solicitacao/usuario/:id_usuario', autenticarToken, SolicitacaoAtendimentoController.buscarPorUsuario);
 
-    // Editar parcialmente uma solicitação
-    editar: async (id, dados) => {
-        const campos = [];
-        const valores = [];
+// Editar uma solicitação
+router.put('/solicitacao/:id', autenticarToken, SolicitacaoAtendimentoController.editar);
 
-        if (dados.descricao !== undefined) {
-            campos.push('descricao = ?');
-            valores.push(dados.descricao);
-        }
+// Deletar uma solicitação
+router.delete('/solicitacao/:id', autenticarToken, SolicitacaoAtendimentoController.deletar);
 
-        if (dados.classificacao !== undefined) {
-            campos.push('classificacao = ?');
-            valores.push(dados.classificacao);
-        }
-
-        if (dados.status !== undefined) {
-            campos.push('status = ?');
-            valores.push(dados.status);
-        }
-
-        if (campos.length === 0) {
-            throw new Error('Nenhum campo válido fornecido para atualização.');
-        }
-
-        const sql = `
-            UPDATE SolicitacaoAtendimento
-            SET ${campos.join(', ')}
-            WHERE id = ?
-        `;
-        valores.push(id);
-
-        await db.execute(sql, valores);
-    },
-
-    // Deletar solicitação
-    deletar: async (id) => {
-        await db.execute('DELETE FROM SolicitacaoAtendimento WHERE id = ?', [id]);
-    }
-};
-
-module.exports = SolicitacaoAtendimentoModel;
+module.exports = router;

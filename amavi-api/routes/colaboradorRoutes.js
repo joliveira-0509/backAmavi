@@ -27,9 +27,12 @@ const upload = multer({
 
 const router = express.Router();
 
-router.get('/colaboradores', autenticarToken, listarColaboradores);
-router.get('/colaboradores/:id', autenticarToken, buscarColaboradorPorId);
-router.post('/colaboradores', autenticarToken, upload.single('imagem'), cadastrarColaborador);
+// Removido autenticarToken das rotas de busca e cadastro
+router.get('/colaboradores', listarColaboradores);
+router.get('/colaboradores/:id', buscarColaboradorPorId);
+router.post('/colaboradores', upload.single('imagem'), cadastrarColaborador);
+
+// Mantém autenticação para atualização, edição parcial e exclusão
 router.put('/colaboradores/:id', autenticarToken, upload.single('imagem'), atualizarColaborador);
 router.patch('/colaboradores/:id', autenticarToken, upload.single('imagem'), editarParcialColaborador);
 router.delete('/colaboradores/:id', autenticarToken, deletarColaborador);

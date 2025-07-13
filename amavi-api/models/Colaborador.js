@@ -18,7 +18,9 @@ const ColaboradorModel = {
   },
 
   async listarTodos() {
-    const sql = `SELECT id, nome, cargo, email, telefone, isAdmin, criado_em FROM Colaborador`;
+    const sql = `SELECT id, nome, cargo, email, telefone, isAdmin, criado_em,
+                        TO_BASE64(foto_url) AS foto_base64
+                 FROM Colaborador`;
     const [rows] = await db.execute(sql);
     return rows;
   },

@@ -13,7 +13,8 @@ const solicitacaoRoutes = require('./routes/solicitacaoAtendimento');
 const historicoRoutes = require('./routes/historicoAtendimentoRoutes');
 const loginRoutes = require('./routes/rotaslogin');
 const eventoRoutes = require('./routes/eventoRoutes');
-const acessosRoutes = require('./routes/estatisticas');
+const acessosRoutes = require('./routes/acessosRoutes');
+const estatisticasRoutes = require('./routes/estatisticas');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -42,7 +43,7 @@ app.use('/api/requerimentos', solicitacaoRoutes);
 app.use('/api/historico', historicoRoutes);
 app.use('/api/auth', loginRoutes);
 app.use('/api/evento', eventoRoutes);
-app.use('/api/estatisticas', estatisticasRoutes);
+
 app.use('/api/acessos', acessosRoutes);
 
 // 🌟 Rota raiz

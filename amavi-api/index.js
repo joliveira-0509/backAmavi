@@ -75,3 +75,4 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log('\x1b[36m%s\x1b[0m', `🚀 Servidor rodando em: https://amaviapi.dev.vilhena.ifro.edu.br:${PORT}`);
 });
+

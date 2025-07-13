@@ -1,9 +1,11 @@
 const DocumentacaoModel = require('../models/documentacaoModel');
+const UsuariosModel = require('../models/usuariosModel'); // Importa o model de usuários
 
 const DocumentacaoController = {
+  // Cadastrar documentação baseado no CPF
   async cadastrar(req, res) {
     try {
-      const { id_usuario, descricao } = req.body;
+      const { cpf, descricao } = req.body;
       const arquivoBuffer = req.file?.buffer;
 
       if (!arquivoBuffer) return res.status(400).json({ error: 'Nenhum arquivo enviado.' });
@@ -13,16 +15,21 @@ const DocumentacaoController = {
         return res.status(400).json({ error: 'Apenas arquivos PDF, JPEG ou PNG são permitidos.' });
       }
 
-      if (!id_usuario || !descricao) {
-        return res.status(400).json({ error: 'id_usuario e descricao são obrigatórios.' });
-      }
-      if (isNaN(id_usuario) || id_usuario <= 0) {
-        return res.status(400).json({ error: 'id_usuario deve ser um número válido.' });
+      if (!cpf || !descricao) {
+        return res.status(400).json({ error: 'CPF e descrição são obrigatórios.' });
       }
       if (descricao.length > 255) {
         return res.status(400).json({ error: 'Descrição excede 255 caracteres.' });
       }
 
+      // Busca usuário pelo CPF
+      const usuario = await UsuariosModel.buscarPorCpf(cpf);
+      if (!usuario) {
+        return res.status(404).json({ error: 'Usuário não encontrado para o CPF informado.' });
+      }
+      const id_usuario = usuario.id;
+
+      // Cadastra documentação usando id_usuario
       const id = await DocumentacaoModel.cadastrar(id_usuario, descricao, arquivoBuffer);
       return res.status(201).json({ message: 'Documentação cadastrada com sucesso.', id });
     } catch (err) {
@@ -64,7 +71,6 @@ const DocumentacaoController = {
       const arquivoBuffer = await DocumentacaoModel.buscarDocumentoPorId(id);
       if (!arquivoBuffer) return res.status(404).json({ error: 'Arquivo não encontrado.' });
 
-      // Aqui você pode ajustar o content-type se quiser baseado em alguma info extra (ex: extensão)
       res.setHeader('Content-Type', 'application/octet-stream');
       res.setHeader('Content-Disposition', `attachment; filename=documento_${id}`);
       return res.send(arquivoBuffer);

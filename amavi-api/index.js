@@ -4,7 +4,7 @@ const cookieParser = require('cookie-parser');
 const multer = require('multer');
 const db = require('./db/db');
 
-// Importação de rotas
+// ====== Importação de Rotas ======
 const usuariosRoutes = require('./routes/usuarios');
 const colaboradorRoutes = require('./routes/colaboradorRoutes');
 const agendaRoutes = require('./routes/agendaEventoRoutes');
@@ -13,26 +13,27 @@ const solicitacaoRoutes = require('./routes/solicitacaoAtendimento');
 const historicoRoutes = require('./routes/historicoAtendimentoRoutes');
 const loginRoutes = require('./routes/rotaslogin');
 const eventoRoutes = require('./routes/eventoRoutes');
+const estatisticasRoutes = require('./routes/estatisticas');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ======= Configuração do Multer (Upload de arquivos) =======
+// 🎒 Configuração do Multer (Upload de arquivos)
 const storage = multer.memoryStorage();
 const upload = multer({
-    storage,
-    limits: { fileSize: 10 * 1024 * 1024 } // 10MB
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB
 });
 
-// ========== Middlewares Globais ==========
+// 🌐 Middlewares Globais
 app.use(cors({
-  origin: ['https://amavi.dev.vilhena.ifro.edu.br', 'http://localhost:3000'], // ← frontend correto
+  origin: ['https://amavi.dev.vilhena.ifro.edu.br', 'http://localhost:3000'],
   credentials: true,
 }));
 app.use(express.json());
 app.use(cookieParser());
 
-// ========== Rotas ==========
+// 🚏 Rotas da aplicação
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/colaborador', colaboradorRoutes);
 app.use('/api/agenda', agendaRoutes);
@@ -41,34 +42,34 @@ app.use('/api/requerimentos', solicitacaoRoutes);
 app.use('/api/historico', historicoRoutes);
 app.use('/api/auth', loginRoutes);
 app.use('/api/evento', eventoRoutes);
+app.use('/api/estatisticas', estatisticasRoutes);
 
-// Rota raiz de verificação
+// 🌟 Rota raiz
 app.get('/', (req, res) => {
-    res.send('✅ API Facilita AMAVI rodando com sucesso!');
+  res.send('✅ API Facilita AMAVI rodando com sucesso!');
 });
 
-// ========== Verificação de conexão com o banco ==========
+// 📡 Verificação de conexão com o banco de dados
 (async () => {
-    try {
-        await db.query('SELECT 1');
-        console.log('✅ Conexão com o banco de dados estabelecida com sucesso.');
-    } catch (err) {
-        console.error('❌ Erro ao conectar no banco de dados:', err.message);
-        process.exit(1);
-    }
+  try {
+    await db.query('SELECT 1');
+    console.log('\x1b[32m%s\x1b[0m', '✅ Conexão com o banco de dados estabelecida com sucesso!');
+  } catch (err) {
+    console.error('\x1b[31m❌ ERRO: Falha ao conectar no banco de dados.\nMotivo: %s\x1b[0m', err.message);
+    process.exit(1);
+  }
 })();
 
-// ========== Tratamento Global de Erros ==========
+// ⚠️ Tratamento Global de Erros
 app.use((err, req, res, next) => {
-    console.error('❌ Erro interno:', err.stack);
-    res.status(err.status || 500).json({
-        error: err.message || 'Erro interno no servidor.'
-    });
+  console.error('\x1b[41m\x1b[37m❌ ERRO INTERNO NO SERVIDOR\x1b[0m\n📍 Detalhes: ', err.stack);
+  res.status(err.status || 500).json({
+    error: err.message || 'Erro interno no servidor.',
+    detalhe: err.stack
+  });
 });
 
-// ========== Start do Servidor ==========
+// 🚀 Start do servidor
 app.listen(PORT, () => {
-    console.log(`🚀 Servidor rodando em https://amaviapi.dev.vilhena.ifro.edu.br:${PORT}`);
+  console.log('\x1b[36m%s\x1b[0m', `🚀 Servidor rodando em: https://amaviapi.dev.vilhena.ifro.edu.br:${PORT}`);
 });
-
-module.exports = app;

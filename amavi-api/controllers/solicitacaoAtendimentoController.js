@@ -1,116 +1,124 @@
-'use client';
-import { useState } from "react";
-import styles from './page.module.css';
-import SimpleLayout from "../layouts/SimpleLayout";
-import { useRouter } from "next/navigation";
+const SolicitacaoAtendimentoModel = require('../models/solicitacaoAtendimentoModel');
 
-export default function SolicitarAtendimento() {
-  const [descricao, setDescricao] = useState('');
-  const [classificacao, setClassificacao] = useState('');
-  const [idDocumentacao, setIdDocumentacao] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const router = useRouter();
+const SolicitacaoAtendimentoController = {
+    cadastrar: async (req, res) => {
+        try {
+            const { id_usuario, descricao, classificacao, id_documentacao } = req.body;
+            const usuarioLogado = req.usuario;
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
+            if (!id_usuario || !descricao || !classificacao) {
+                return res.status(400).json({ error: 'Campos obrigatórios: id_usuario, descricao, classificacao.' });
+            }
 
-    if (!descricao || !classificacao || !idDocumentacao) {
-      setError('Por favor, preencha todos os campos obrigatórios.');
-      return;
+            // Só permite se for Adm ou o próprio usuário
+            if (usuarioLogado.tipo_usuario !== 'Adm' && usuarioLogado.id != id_usuario) {
+                return res.status(403).json({ error: 'Acesso negado.' });
+            }
+
+            const id = await SolicitacaoAtendimentoModel.cadastrar({
+                id_usuario,
+                descricao,
+                classificacao,
+                id_documentacao
+            });
+
+            res.status(201).json({ message: 'Solicitação cadastrada com sucesso!', id });
+        } catch (err) {
+            console.error('Erro ao cadastrar solicitação:', err);
+            res.status(500).json({ error: 'Erro ao cadastrar solicitação.', details: err.message });
+        }
+    },
+
+    listarTodas: async (req, res) => {
+        const usuarioLogado = req.usuario;
+        try {
+            // Apenas admin pode listar todas
+            if (usuarioLogado.tipo_usuario !== 'Adm') {
+                return res.status(403).json({ error: 'Acesso negado.' });
+            }
+            const resultados = await SolicitacaoAtendimentoModel.listarTodas();
+            res.status(200).json(resultados);
+        } catch (err) {
+            console.error('Erro ao listar solicitações:', err);
+            res.status(500).json({ error: 'Erro ao listar solicitações.', details: err.message });
+        }
+    },
+
+    buscarPorId: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const usuarioLogado = req.usuario;
+            const resultado = await SolicitacaoAtendimentoModel.buscarPorId(id);
+            if (!resultado) {
+                return res.status(404).json({ error: 'Solicitação não encontrada.' });
+            }
+            // Só permite se for Adm ou dono da solicitação
+            if (usuarioLogado.tipo_usuario !== 'Adm' && usuarioLogado.id != resultado.id_usuario) {
+                return res.status(403).json({ error: 'Acesso negado.' });
+            }
+            res.status(200).json(resultado);
+        } catch (err) {
+            console.error('Erro ao buscar solicitação:', err);
+            res.status(500).json({ error: 'Erro ao buscar solicitação.', details: err.message });
+        }
+    },
+
+    buscarPorUsuario: async (req, res) => {
+        try {
+            const { id_usuario } = req.params;
+            const usuarioLogado = req.usuario;
+            // Só permite se for Adm ou o próprio usuário
+            if (usuarioLogado.tipo_usuario !== 'Adm' && usuarioLogado.id != id_usuario) {
+                return res.status(403).json({ error: 'Acesso negado.' });
+            }
+            const resultados = await SolicitacaoAtendimentoModel.buscarPorUsuario(id_usuario);
+            res.status(200).json(resultados);
+        } catch (err) {
+            console.error('Erro ao buscar solicitações por usuário:', err);
+            res.status(500).json({ error: 'Erro ao buscar solicitações.', details: err.message });
+        }
+    },
+
+    editar: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const usuarioLogado = req.usuario;
+            const resultado = await SolicitacaoAtendimentoModel.buscarPorId(id);
+            if (!resultado) {
+                return res.status(404).json({ error: 'Solicitação não encontrada.' });
+            }
+            // Só permite se for Adm ou dono da solicitação
+            if (usuarioLogado.tipo_usuario !== 'Adm' && usuarioLogado.id != resultado.id_usuario) {
+                return res.status(403).json({ error: 'Acesso negado.' });
+            }
+            const dados = req.body;
+            await SolicitacaoAtendimentoModel.editar(id, dados);
+            res.status(200).json({ message: 'Solicitação atualizada com sucesso!' });
+        } catch (err) {
+            console.error('Erro ao editar solicitação:', err);
+            res.status(500).json({ error: 'Erro ao editar solicitação.', details: err.message });
+        }
+    },
+
+    deletar: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const usuarioLogado = req.usuario;
+            const resultado = await SolicitacaoAtendimentoModel.buscarPorId(id);
+            if (!resultado) {
+                return res.status(404).json({ error: 'Solicitação não encontrada.' });
+            }
+            // Só permite se for Adm ou dono da solicitação
+            if (usuarioLogado.tipo_usuario !== 'Adm' && usuarioLogado.id != resultado.id_usuario) {
+                return res.status(403).json({ error: 'Acesso negado.' });
+            }
+            await SolicitacaoAtendimentoModel.deletar(id);
+            res.status(200).json({ message: 'Solicitação excluída com sucesso!' });
+        } catch (err) {
+            console.error('Erro ao deletar solicitação:', err);
+            res.status(500).json({ error: 'Erro ao deletar solicitação.', details: err.message });
+        }
     }
+};
 
-    const payload = {
-      descricao,
-      classificacao,
-      id_documentacao: parseInt(idDocumentacao),
-    };
-
-    try {
-      const response = await fetch('https://amaviapi.dev.vilhena.ifro.edu.br/api/requerimentos/solicitacao', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // <-- importante para enviar cookies
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-
-      if (response.status === 201) {
-        setSuccess(data.message || 'Solicitação cadastrada com sucesso!');
-        setDescricao('');
-        setClassificacao('');
-        setIdDocumentacao('');
-      } else {
-        setError(data.message || 'Erro ao cadastrar solicitação.');
-      }
-    } catch (err) {
-      setError('Erro de conexão com o servidor.');
-      console.error(err);
-    }
-  };
-
-  const handleVerHistorico = () => {
-    router.push('Solicitar-Atendimento/historico-atendimentos');
-  };
-
-  return (
-    <SimpleLayout>
-      <h1 className={styles.title}>REQUERIMENTO/SOLICITAR ATENDIMENTO</h1>
-      <div className={styles.formContainer}>
-        {error && <p className={styles.error}>{error}</p>}
-        {success && <p className={styles.success}>{success}</p>}
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <label htmlFor="descricao" className={styles.label}>Descrição:</label>
-          <textarea
-            id="descricao"
-            name="descricao"
-            className={styles.textarea}
-            value={descricao}
-            onChange={(e) => setDescricao(e.target.value)}
-            required
-          ></textarea>
-
-          <label htmlFor="classificacao" className={styles.smallLabel}>Classificação:</label>
-          <select
-            id="classificacao"
-            name="classificacao"
-            className={styles.select}
-            value={classificacao}
-            onChange={(e) => setClassificacao(e.target.value)}
-            required
-          >
-            <option value="">Selecione</option>
-            <option value="Urgente">Urgente</option>
-            <option value="Normal">Normal</option>
-          </select>
-
-          <label htmlFor="idDocumentacao" className={styles.smallLabel}>Anexar documento:</label>
-          <select
-            id="idDocumentacao"
-            name="idDocumentacao"
-            className={styles.select}
-            value={idDocumentacao}
-            onChange={(e) => setIdDocumentacao(e.target.value)}
-            required
-          >
-            <option value="">Selecione</option>
-            <option value="1">Documento 1</option>
-            <option value="2">Documento 2</option>
-          </select>
-
-          <div className={styles.buttonGroup}>
-            <button type="submit" className={styles.button}>ENVIAR</button>
-            <button type="button" className={styles.secondaryButton} onClick={handleVerHistorico}>
-              VER HISTÓRICO
-            </button>
-          </div>
-        </form>
-      </div>
-    </SimpleLayout>
-  );
-}
+module.exports = SolicitacaoAtendimentoController;

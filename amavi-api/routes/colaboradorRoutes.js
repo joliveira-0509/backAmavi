@@ -6,7 +6,8 @@ const {
   cadastrarColaborador,
   atualizarColaborador,
   editarParcialColaborador,
-  deletarColaborador
+  deletarColaborador,
+  loginAdmin // <-- importa a função de login admin
 } = require('../controllers/colaboradorController.js');
 const { autenticarToken } = require('../controllers/loginController');
 
@@ -27,14 +28,14 @@ const upload = multer({
 
 const router = express.Router();
 
-// Removido autenticarToken das rotas de busca e cadastro
+// Removido autenticarToken das rotas de busca, cadastro, atualização, edição parcial e exclusão
 router.get('/colaboradores', listarColaboradores);
 router.get('/colaboradores/:id', buscarColaboradorPorId);
 router.post('/colaboradores', upload.single('foto_url'), cadastrarColaborador);
 
-// Mantém autenticação para atualização, edição parcial e exclusão
-router.put('/colaboradores/:id', autenticarToken, upload.single('foto_url'), atualizarColaborador);
-router.patch('/colaboradores/:id', autenticarToken, upload.single('foto_url'), editarParcialColaborador);
-router.delete('/colaboradores/:id', autenticarToken, deletarColaborador);
+router.put('/colaboradores/:id', upload.single('foto_url'), atualizarColaborador);
+router.patch('/colaboradores/:id', upload.single('foto_url'), editarParcialColaborador);
+router.delete('/colaboradores/:id', deletarColaborador);
+router.post('/login-admin', loginAdmin);
 
 module.exports = router;

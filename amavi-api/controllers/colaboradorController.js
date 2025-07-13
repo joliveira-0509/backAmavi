@@ -1,5 +1,5 @@
 const bcrypt = require('bcryptjs');
-const ColaboradorModel = require('../models/Colaborador');
+const ColaboradorModel = require('../models/ColaboradorModel');
 
 const listarColaboradores = async (req, res) => {
   try {
@@ -106,6 +106,40 @@ const deletarColaborador = async (req, res) => {
   }
 };
 
+const loginAdmin = async (req, res) => {
+  try {
+    const { email, senha } = req.body;
+
+    if (!email || !senha) {
+      return res.status(400).json({ erro: 'Email e senha são obrigatórios.' });
+    }
+
+    const colaborador = await ColaboradorModel.buscarPorEmail(email);
+
+    if (!colaborador || !colaborador.isAdmin) {
+      return res.status(401).json({ erro: 'Acesso restrito a administradores.' });
+    }
+
+    const senhaCorreta = await bcrypt.compare(senha, colaborador.senha);
+
+    if (!senhaCorreta) {
+      return res.status(401).json({ erro: 'Credenciais inválidas.' });
+    }
+
+    // Aqui você pode gerar um token JWT se desejar
+    res.status(200).json({
+      mensagem: 'Login de administrador realizado com sucesso.',
+      colaborador: {
+        id: colaborador.id,
+        nome: colaborador.nome,
+        email: colaborador.email
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ erro: 'Erro ao realizar login.', detalhes: error.message });
+  }
+};
+
 module.exports = {
   listarColaboradores,
   buscarColaboradorPorId,
@@ -113,4 +147,5 @@ module.exports = {
   atualizarColaborador,
   editarParcialColaborador,
   deletarColaborador,
+  loginAdmin,
 };

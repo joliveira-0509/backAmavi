@@ -1,15 +1,17 @@
 const DocumentacaoModel = require('../models/documentacaoModel');
 
 const DocumentacaoController = {
-    // Cadastrar nova documentação
+    // Cadastrar nova documentação com arquivo
     async cadastrar(req, res) {
         try {
-            const { id_usuario, inscricao } = req.body;
-            if (!id_usuario || !inscricao) {
-                return res.status(400).json({ error: 'id_usuario e inscricao são obrigatórios.' });
+            const { id_usuario, descricao } = req.body;
+            const arquivoBuffer = req.file?.buffer;
+
+            if (!id_usuario || !descricao || !arquivoBuffer) {
+                return res.status(400).json({ error: 'id_usuario, descricao e arquivo são obrigatórios.' });
             }
 
-            const id = await DocumentacaoModel.cadastrar(id_usuario, inscricao);
+            const id = await DocumentacaoModel.cadastrar(id_usuario, descricao, arquivoBuffer);
             return res.status(201).json({ message: 'Documentação cadastrada com sucesso.', id });
         } catch (err) {
             console.error('Erro ao cadastrar documentação:', err);
@@ -17,7 +19,7 @@ const DocumentacaoController = {
         }
     },
 
-    // Listar todas as documentações
+    // Listar todas as documentações (sem arquivos)
     async listarTodas(req, res) {
         try {
             const docs = await DocumentacaoModel.listarTodas();
@@ -28,7 +30,7 @@ const DocumentacaoController = {
         }
     },
 
-    // Buscar por ID
+    // Buscar uma documentação por ID (sem arquivo)
     async buscarPorId(req, res) {
         try {
             const { id } = req.params;
@@ -43,7 +45,25 @@ const DocumentacaoController = {
         }
     },
 
-    // Buscar por usuário
+    // Buscar somente o arquivo (para download ou visualização)
+    async buscarArquivo(req, res) {
+        try {
+            const { id } = req.params;
+            const arquivo = await DocumentacaoModel.buscarDocumentoPorId(id);
+
+            if (!arquivo) {
+                return res.status(404).json({ error: 'Arquivo não encontrado.' });
+            }
+
+            res.setHeader('Content-Type', 'application/octet-stream');
+            res.send(arquivo); // Buffer do arquivo
+        } catch (err) {
+            console.error('Erro ao buscar arquivo:', err);
+            return res.status(500).json({ error: 'Erro ao buscar arquivo.' });
+        }
+    },
+
+    // Buscar documentos por usuário
     async buscarPorUsuario(req, res) {
         try {
             const { id_usuario } = req.params;
@@ -55,16 +75,18 @@ const DocumentacaoController = {
         }
     },
 
-    // Editar documentação
+    // Editar documentação (com ou sem novo arquivo)
     async editar(req, res) {
         try {
             const { id } = req.params;
-            const { inscricao } = req.body;
-            if (!inscricao) {
-                return res.status(400).json({ error: 'O campo inscricao é obrigatório.' });
+            const { id_usuario, descricao } = req.body;
+            const arquivoBuffer = req.file?.buffer;
+
+            if (!id_usuario || !descricao) {
+                return res.status(400).json({ error: 'id_usuario e descricao são obrigatórios.' });
             }
 
-            await DocumentacaoModel.atualizar(id, inscricao);
+            await DocumentacaoModel.atualizar(id, id_usuario, descricao, arquivoBuffer);
             return res.status(200).json({ message: 'Documentação atualizada com sucesso.' });
         } catch (err) {
             console.error('Erro ao atualizar documentação:', err);

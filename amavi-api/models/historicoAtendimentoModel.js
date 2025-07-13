@@ -11,7 +11,7 @@ const HistoricoAtendimentoModel = {
                 a.data,
                 a.pessoa_atendimento,
                 a.bp_atendimento,
-                a.inscricao,
+                a.descricao,
                 a.criado_em,
                 a.status AS atendimento_status
             FROM SolicitacaoAtendimento sa
@@ -29,7 +29,7 @@ const HistoricoAtendimentoModel = {
                 id,
                 id_usuario,
                 id_documentacao,
-                inscricao,
+                descricao,
                 data,
                 pessoa_atendimento,
                 bp_atendimento,
@@ -43,12 +43,12 @@ const HistoricoAtendimentoModel = {
     },
 
     adicionarAtendimento: async (novoAtendimento) => {
-        const { id_usuario, id_documentacao, inscricao, data, pessoa_atendimento, bp_atendimento, status } = novoAtendimento;
+        const { id_usuario, id_documentacao, descricao, data, pessoa_atendimento, bp_atendimento, status } = novoAtendimento;
         const sql = `
-            INSERT INTO Atendimento (id_usuario, id_documentacao, inscricao, data, pessoa_atendimento, bp_atendimento, status)
+            INSERT INTO Atendimento (id_usuario, id_documentacao, descricao, data, pessoa_atendimento, bp_atendimento, status)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         `;
-        const [result] = await db.execute(sql, [id_usuario, id_documentacao, inscricao, data, pessoa_atendimento, bp_atendimento, status]);
+        const [result] = await db.execute(sql, [id_usuario, id_documentacao, descricao, data, pessoa_atendimento, bp_atendimento, status]);
         return result;
     },
 
@@ -58,7 +58,7 @@ const HistoricoAtendimentoModel = {
                 id,
                 id_usuario,
                 id_documentacao,
-                inscricao,
+                descricao,
                 data,
                 pessoa_atendimento,
                 bp_atendimento,
@@ -72,20 +72,20 @@ const HistoricoAtendimentoModel = {
     },
 
     atualizarAtendimento: async (id, dadosAtualizados) => {
-        const { id_usuario, id_documentacao, inscricao, data, pessoa_atendimento, bp_atendimento, status } = dadosAtualizados;
+        const { id_usuario, id_documentacao, descricao, data, pessoa_atendimento, bp_atendimento, status } = dadosAtualizados;
         const sql = `
             UPDATE Atendimento
             SET
                 id_usuario = ?,
                 id_documentacao = ?,
-                inscricao = ?,
+                descricao = ?,
                 data = ?,
                 pessoa_atendimento = ?,
                 bp_atendimento = ?,
                 status = ?
             WHERE id = ?
         `;
-        const [result] = await db.execute(sql, [id_usuario, id_documentacao, inscricao, data, pessoa_atendimento, bp_atendimento, status, id]);
+        const [result] = await db.execute(sql, [id_usuario, id_documentacao, descricao, data, pessoa_atendimento, bp_atendimento, status, id]);
         return result;
     },
 
@@ -104,7 +104,7 @@ const HistoricoAtendimentoModel = {
                 id,
                 id_usuario,
                 id_documentacao,
-                inscricao,
+                descricao,
                 data,
                 pessoa_atendimento,
                 bp_atendimento,

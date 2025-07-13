@@ -14,7 +14,7 @@ const historicoRoutes = require('./routes/historicoAtendimentoRoutes');
 const loginRoutes = require('./routes/rotaslogin');
 const eventoRoutes = require('./routes/eventoRoutes');
 const acessosRoutes = require('./routes/acessosRoutes');
-const estatisticasRoutes = require('./routes/estatisticas');
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;

@@ -1,38 +1,31 @@
 const express = require('express');
 const multer = require('multer');
-const {
-  cadastrar,
-  listarTodas,
-  buscarPorId,
-  buscarArquivo,
-  buscarPorUsuario,
-  editar,
-  deletar
-} = require('../controllers/documentacaoController');
+const DocumentacaoController = require('../controllers/documentacaoController');
+const { autenticarToken } = require('../controllers/loginController');
 
-// Configuração do Multer
+// Multer - armazenamento em memória para pegar buffer
 const storage = multer.memoryStorage();
 const upload = multer({
-  storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limite
   fileFilter: (req, file, cb) => {
-    const filetypes = /pdf|doc|docx/;
-    const mimetype = filetypes.test(file.mimetype);
-    if (mimetype) {
-      return cb(null, true);
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Apenas arquivos PDF, JPEG ou PNG são permitidos!'));
     }
-    cb(new Error('Apenas arquivos PDF, DOC ou DOCX são permitidos!'));
   }
 });
 
 const router = express.Router();
 
-router.post('/documentos', upload.single('documento'), cadastrar);
-router.get('/documentos', listarTodas);
-router.get('/documentos/:id', buscarPorId);
-router.get('/documentos/arquivo/:id', buscarArquivo);
-router.get('/documentos/usuario/:id_usuario', buscarPorUsuario);
-router.put('/documentos/:id', upload.single('documento'), editar);
-router.delete('/documentos/:id', deletar);
+router.post('/documentos', autenticarToken, upload.single('documento'), DocumentacaoController.cadastrar);
+router.get('/documentos', autenticarToken, DocumentacaoController.listarTodas);
+router.get('/documentos/:id', autenticarToken, DocumentacaoController.buscarPorId);
+router.get('/documentos/arquivo/:id', autenticarToken, DocumentacaoController.buscarArquivo);
+router.get('/documentos/usuario/:id_usuario', autenticarToken, DocumentacaoController.buscarPorUsuario);
+router.put('/documentos/:id', autenticarToken, upload.single('documento'), DocumentacaoController.editar);
+router.delete('/documentos/:id', autenticarToken, DocumentacaoController.deletar);
 
 module.exports = router;

@@ -1,12 +1,11 @@
-require('dotenv').config();
 const mysql = require('mysql2/promise');
 
 const connection = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',         // Host do banco
-  user: process.env.DB_USER,         // Usuário do MySQL
-  password: process.env.DB_PASSWORD, // Senha do MySQL
-  database: process.env.DB_NAME,     // Nome do banco de dados
-  port: process.env.DB_PORT          // Porta do MySQL
+  host: 'icskko8k08w0ss88kws80s0o',   // ✅ Coloque aqui o host completo
+  user: 'amavi',
+  password: '12345678',
+  database: 'amavi_bd',
+  port: 3306
 });
 
 module.exports = connection;

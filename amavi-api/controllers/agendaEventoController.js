@@ -1,14 +1,33 @@
 const AgendaEventoModel = require('../models/agendaEventoModel');
 
 const AgendaEventoController = {
-  cadastrar: async (req, res) => {
+  // Cadastrar evento com imagem
+  cadastrarEvento: async (req, res) => {
     try {
-      const evento = req.body;
-      // Removido tratamento de foto_url/imagem
-      const result = await AgendaEventoModel.cadastrar(evento);
+      const {
+        titulo,
+        descricao,
+        tipo_evento,
+        data_evento,
+        horario_evento,
+        publico
+      } = req.body;
+
+      const foto_url = req.file ? req.file.buffer : null;
+
+      const id = await AgendaEventoModel.cadastrar(
+        titulo,
+        descricao,
+        tipo_evento,
+        data_evento,
+        horario_evento,
+        publico,
+        foto_url
+      );
+
       return res.status(201).json({
         message: 'Evento cadastrado com sucesso!',
-        id: result.insertId
+        id
       });
     } catch (err) {
       console.error('Erro ao cadastrar evento:', err);
@@ -16,7 +35,7 @@ const AgendaEventoController = {
     }
   },
 
-  listarTodos: async (req, res) => {
+  listarEventos: async (req, res) => {
     try {
       const eventos = await AgendaEventoModel.listarTodos();
       return res.status(200).json(eventos);
@@ -26,10 +45,10 @@ const AgendaEventoController = {
     }
   },
 
-  listarPorTipo: async (req, res) => {
+  listarEventosPorTipo: async (req, res) => {
     try {
-      const { tipo } = req.params;
-      const eventos = await AgendaEventoModel.listarPorTipo(tipo);
+      const { tipo_evento } = req.params;
+      const eventos = await AgendaEventoModel.listarPorTipo(tipo_evento);
 
       if (eventos.length === 0) {
         return res.status(404).json({ error: 'Nenhum evento encontrado com esse tipo.' });
@@ -42,21 +61,74 @@ const AgendaEventoController = {
     }
   },
 
-  editar: async (req, res) => {
+  buscarEventoPorId: async (req, res) => {
     try {
       const { id } = req.params;
-      const evento = req.body;
+      const evento = await AgendaEventoModel.buscarPorId(id);
 
-      await AgendaEventoModel.editar(id, evento);
+      if (!evento) {
+        return res.status(404).json({ error: 'Evento não encontrado.' });
+      }
 
-      return res.status(200).json({ message: 'Evento atualizado com sucesso!' });
+      return res.status(200).json(evento);
     } catch (err) {
-      console.error('Erro ao editar evento:', err);
-      return res.status(500).json({ error: 'Erro ao editar evento.', details: err.message });
+      console.error('Erro ao buscar evento por ID:', err);
+      return res.status(500).json({ error: 'Erro ao buscar evento.', details: err.message });
     }
   },
 
-  deletar: async (req, res) => {
+  atualizarEvento: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const {
+        titulo,
+        descricao,
+        tipo_evento,
+        data_evento,
+        horario_evento,
+        publico
+      } = req.body;
+
+      const foto_url = req.file ? req.file.buffer : null;
+
+      await AgendaEventoModel.atualizar(
+        id,
+        titulo,
+        descricao,
+        tipo_evento,
+        data_evento,
+        horario_evento,
+        publico,
+        foto_url
+      );
+
+      return res.status(200).json({ message: 'Evento atualizado com sucesso!' });
+    } catch (err) {
+      console.error('Erro ao atualizar evento:', err);
+      return res.status(500).json({ error: 'Erro ao atualizar evento.', details: err.message });
+    }
+  },
+
+  atualizarParcialEvento: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const dados = { ...req.body };
+
+      // Se imagem foi enviada, adiciona ao dados para atualização
+      if (req.file) {
+        dados.foto_url = req.file.buffer;
+      }
+
+      await AgendaEventoModel.atualizarParcial(id, dados);
+
+      return res.status(200).json({ message: 'Evento atualizado parcialmente com sucesso!' });
+    } catch (err) {
+      console.error('Erro ao atualizar parcialmente evento:', err);
+      return res.status(500).json({ error: 'Erro ao atualizar evento.', details: err.message });
+    }
+  },
+
+  deletarEvento: async (req, res) => {
     try {
       const { id } = req.params;
 

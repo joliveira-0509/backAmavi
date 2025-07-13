@@ -30,11 +30,11 @@ const router = express.Router();
 // Removido autenticarToken das rotas de busca e cadastro
 router.get('/colaboradores', listarColaboradores);
 router.get('/colaboradores/:id', buscarColaboradorPorId);
-router.post('/colaboradores', upload.single('imagem'), cadastrarColaborador);
+router.post('/colaboradores', upload.single('foto_url'), cadastrarColaborador);
 
 // Mantém autenticação para atualização, edição parcial e exclusão
-router.put('/colaboradores/:id', autenticarToken, upload.single('imagem'), atualizarColaborador);
-router.patch('/colaboradores/:id', autenticarToken, upload.single('imagem'), editarParcialColaborador);
+router.put('/colaboradores/:id', autenticarToken, upload.single('foto_url'), atualizarColaborador);
+router.patch('/colaboradores/:id', autenticarToken, upload.single('foto_url'), editarParcialColaborador);
 router.delete('/colaboradores/:id', autenticarToken, deletarColaborador);
 
 module.exports = router;

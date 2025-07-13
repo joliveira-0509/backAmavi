@@ -1,21 +1,20 @@
 const express = require('express');
 const multer = require('multer');
 const {
-  cadastrarDocumento,
-  listarDocumentos,
-  buscarDocumentoPorId,
-  buscarDocumentosPorUsuario,
-  atualizarDocumento,
-  editarParcialDocumento,
-  deletarDocumento
+  cadastrar,
+  listarTodas,
+  buscarPorId,
+  buscarArquivo,
+  buscarPorUsuario,
+  editar,
+  deletar
 } = require('../controllers/documentacaoController');
-const { autenticarToken } = require('../controllers/loginController');
 
-// Configure Multer para armazenar arquivos na memória (já que serão salvos no DB como LONGBLOB)
+// Configuração do Multer
 const storage = multer.memoryStorage();
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // Limite de 10MB para documentos
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: (req, file, cb) => {
     const filetypes = /pdf|doc|docx/;
     const mimetype = filetypes.test(file.mimetype);
@@ -28,12 +27,12 @@ const upload = multer({
 
 const router = express.Router();
 
-router.post('/documentos', autenticarToken, upload.single('documento'), cadastrarDocumento);
-router.get('/documentos', autenticarToken, listarDocumentos);
-router.get('/documentos/:id', autenticarToken, buscarDocumentoPorId);
-router.get('/documentos/usuario/:id_usuario', autenticarToken, buscarDocumentosPorUsuario);
-router.put('/documentos/:id', autenticarToken, upload.single('documento'), atualizarDocumento);
-router.patch('/documentos/:id', autenticarToken, upload.single('documento'), editarParcialDocumento);
-router.delete('/documentos/:id', autenticarToken, deletarDocumento);
+router.post('/documentos', upload.single('documento'), cadastrar);
+router.get('/documentos', listarTodas);
+router.get('/documentos/:id', buscarPorId);
+router.get('/documentos/arquivo/:id', buscarArquivo);
+router.get('/documentos/usuario/:id_usuario', buscarPorUsuario);
+router.put('/documentos/:id', upload.single('documento'), editar);
+router.delete('/documentos/:id', deletar);
 
 module.exports = router;

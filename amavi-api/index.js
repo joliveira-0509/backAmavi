@@ -28,7 +28,11 @@ const upload = multer({
 
 // 🌐 Middlewares Globais
 app.use(cors({
-  origin: ['https://amavi.dev.vilhena.ifro.edu.br', 'http://localhost:3000'],
+  origin: [
+    'https://amavi.dev.vilhena.ifro.edu.br',
+    'http://localhost:3000',
+    'https://amaviapi.dev.vilhena.ifro.edu.br'
+  ],
   credentials: true,
 }));
 app.use(express.json());

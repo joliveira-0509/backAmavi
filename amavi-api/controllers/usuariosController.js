@@ -86,9 +86,8 @@ const UsuariosController = {
 
             const arquivos = req.files || {}; // Obtém os arquivos enviados
 
-            // Pega os buffers dos arquivos enviados
-            const foto_blob = arquivos.foto?.[0]?.buffer || null;
-            const laudo_blob = arquivos.laudoMedico?.[0]?.buffer || null;
+            const foto_blob = arquivos.foto_blob?.[0]?.buffer || null;
+            const laudo_blob = arquivos.laudo_medico?.[0]?.buffer || null;
 
             // Substitui valores undefined por null
             for (const key in usuario) {
@@ -168,7 +167,7 @@ const UsuariosController = {
                 tipo_usuario,
                 usuario.id_responsavel || null,
                 usuario.data_nascimento,
-                foto_blob,
+                foto_blob, // <-- buffer da imagem
                 usuario.criado_em || new Date()
             ]);
 

@@ -18,13 +18,13 @@ const ColaboradorModel = {
   },
 
   async listarTodos() {
-    const sql = `SELECT id, nome, cargo, email, telefone, isAdmin FROM Colaborador`;
+    const sql = `SELECT id, nome, cargo, email, telefone, isAdmin, criado_em FROM Colaborador`;
     const [rows] = await db.execute(sql);
     return rows;
   },
 
   async buscarPorId(id) {
-    const sql = `SELECT id, nome, cargo, email, telefone, isAdmin FROM Colaborador WHERE id = ?`;
+    const sql = `SELECT id, nome, cargo, email, telefone, isAdmin, criado_em FROM Colaborador WHERE id = ?`;
     const [rows] = await db.execute(sql, [id]);
     return rows[0] || null;
   },

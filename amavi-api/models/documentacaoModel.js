@@ -1,63 +1,94 @@
 const db = require('../db/db');
 
 const DocumentacaoModel = {
-  // Cadastrar nova documentação (arquivo como buffer)
+  // Cadastrar nova documentação
   async cadastrar(id_usuario, descricao, arquivoBuffer) {
     const sql = `
-      INSERT INTO Documentacao (id_usuario, descricao, arquivo_url) 
+      INSERT INTO Documentacao (id_usuario, descricao, arquivo_url)
       VALUES (?, ?, ?)
     `;
-    const [result] = await db.execute(sql, [id_usuario, descricao, arquivoBuffer]);
-    return result.insertId;
+    try {
+      const [result] = await db.execute(sql, [id_usuario, descricao, arquivoBuffer]);
+      console.log('Inserção bem-sucedida, ID:', result.insertId);
+      return result.insertId;
+    } catch (err) {
+      console.error('Erro na query SQL (cadastrar):', err.message, err.sqlMessage);
+      throw err;
+    }
   },
 
-  // Buscar todas as documentações (sem o arquivo para performance)
+  // Listar todas as documentações (sem arquivo para performance)
   async listarTodas() {
     const sql = `
-      SELECT id, id_usuario, descricao, criado_em 
+      SELECT id, id_usuario, descricao, criado_em
       FROM Documentacao
     `;
-    const [rows] = await db.execute(sql);
-    return rows;
+    try {
+      const [rows] = await db.execute(sql);
+      return rows;
+    } catch (err) {
+      console.error('Erro na query SQL (listarTodas):', err.message, err.sqlMessage);
+      throw err;
+    }
   },
 
-  // Buscar uma documentação (sem o arquivo)
+  // Buscar uma documentação por ID (sem arquivo)
   async buscarPorId(id) {
     const sql = `
-      SELECT id, id_usuario, descricao, criado_em 
-      FROM Documentacao 
+      SELECT id, id_usuario, descricao, criado_em
+      FROM Documentacao
       WHERE id = ?
     `;
-    const [rows] = await db.execute(sql, [id]);
-    return rows[0] || null;
+    try {
+      const [rows] = await db.execute(sql, [id]);
+      return rows[0] || null;
+    } catch (err) {
+      console.error('Erro na query SQL (buscarPorId):', err.message, err.sqlMessage);
+      throw err;
+    }
   },
 
   // Buscar arquivo binário por ID
   async buscarDocumentoPorId(id) {
     const sql = `SELECT arquivo_url FROM Documentacao WHERE id = ?`;
-    const [rows] = await db.execute(sql, [id]);
-    return rows[0]?.arquivo_url || null; // Isso será um Buffer
+    try {
+      const [rows] = await db.execute(sql, [id]);
+      return rows[0]?.arquivo_url || null;
+    } catch (err) {
+      console.error('Erro na query SQL (buscarDocumentoPorId):', err.message, err.sqlMessage);
+      throw err;
+    }
   },
 
   // Buscar documentações por usuário
   async buscarPorUsuario(id_usuario) {
     const sql = `
-      SELECT id, id_usuario, descricao, criado_em 
-      FROM Documentacao 
+      SELECT id, id_usuario, descricao, criado_em
+      FROM Documentacao
       WHERE id_usuario = ?
     `;
-    const [rows] = await db.execute(sql, [id_usuario]);
-    return rows;
+    try {
+      const [rows] = await db.execute(sql, [id_usuario]);
+      return rows;
+    } catch (err) {
+      console.error('Erro na query SQL (buscarPorUsuario):', err.message, err.sqlMessage);
+      throw err;
+    }
   },
 
-  // Atualizar documentação com novo arquivo
+  // Atualizar documentação
   async atualizar(id, id_usuario, descricao, arquivoBuffer) {
     const sql = `
-      UPDATE Documentacao 
-      SET id_usuario = ?, descricao = ?, arquivo_url = ? 
+      UPDATE Documentacao
+      SET id_usuario = ?, descricao = ?, arquivo_url = COALESCE(?, arquivo_url)
       WHERE id = ?
     `;
-    await db.execute(sql, [id_usuario, descricao, arquivoBuffer, id]);
+    try {
+      await db.execute(sql, [id_usuario, descricao, arquivoBuffer, id]);
+    } catch (err) {
+      console.error('Erro na query SQL (atualizar):', err.message, err.sqlMessage);
+      throw err;
+    }
   },
 
   // Atualização parcial (sem arquivo)
@@ -71,13 +102,23 @@ const DocumentacaoModel = {
 
     const setString = campos.map(campo => `${campo} = ?`).join(', ');
     const sql = `UPDATE Documentacao SET ${setString} WHERE id = ?`;
-    await db.execute(sql, [...valores, id]);
+    try {
+      await db.execute(sql, [...valores, id]);
+    } catch (err) {
+      console.error('Erro na query SQL (atualizarParcial):', err.message, err.sqlMessage);
+      throw err;
+    }
   },
 
   // Deletar documentação
   async deletar(id) {
     const sql = `DELETE FROM Documentacao WHERE id = ?`;
-    await db.execute(sql, [id]);
+    try {
+      await db.execute(sql, [id]);
+    } catch (err) {
+      console.error('Erro na query SQL (deletar):', err.message, err.sqlMessage);
+      throw err;
+    }
   }
 };
 

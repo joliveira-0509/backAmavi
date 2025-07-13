@@ -1,9 +1,15 @@
 const express = require('express');
 const multer = require('multer');
-const upload = multer(); // para arquivos em buffer (sem salvar em disco)
+const DocumentacaoController = require('../controllers/documentacaoController');
 
 const router = express.Router();
-const DocumentacaoController = require('../controllers/documentacaoController');
+
+// Configuração do Multer para upload de arquivos
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB
+});
 
 // POST /api/documentacao (com upload de arquivo)
 router.post('/', upload.single('arquivo'), DocumentacaoController.cadastrar);

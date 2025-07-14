@@ -20,7 +20,7 @@ router.get('/Usuarios', autenticarToken, UsuariosController.buscarUsuariosPorNom
 router.get('/Usuarios/todos', UsuariosController.buscarTodosUsuarios);
 
 // Buscar, atualizar e deletar por ID
-router.get('/Usuarios/:id', autenticarToken, UsuariosController.buscarPorId);
+router.get('/Usuarios/:id', UsuariosController.buscarPorId);
 router.put('/atualizar/:id', autenticarToken, UsuariosController.atualizarUsuario);
 router.patch('/atualizar/:id', autenticarToken, UsuariosController.atualizarUsuarioParcial);
 router.delete('/Usuarios/:id', autenticarToken, UsuariosController.deletarUsuario);

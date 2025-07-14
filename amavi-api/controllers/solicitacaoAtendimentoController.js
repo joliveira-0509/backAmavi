@@ -4,15 +4,9 @@ const SolicitacaoAtendimentoController = {
     cadastrar: async (req, res) => {
         try {
             const { id_usuario, descricao, classificacao, id_documentacao } = req.body;
-            const usuarioLogado = req.usuario;
 
             if (!id_usuario || !descricao || !classificacao) {
                 return res.status(400).json({ error: 'Campos obrigatórios: id_usuario, descricao, classificacao.' });
-            }
-
-            // Só permite se for Adm ou o próprio usuário
-            if (usuarioLogado.tipo_usuario !== 'Adm' && usuarioLogado.id != id_usuario) {
-                return res.status(403).json({ error: 'Acesso negado.' });
             }
 
             const id = await SolicitacaoAtendimentoModel.cadastrar({
@@ -30,12 +24,7 @@ const SolicitacaoAtendimentoController = {
     },
 
     listarTodas: async (req, res) => {
-        const usuarioLogado = req.usuario;
         try {
-            // Apenas admin pode listar todas
-            if (usuarioLogado.tipo_usuario !== 'Adm') {
-                return res.status(403).json({ error: 'Acesso negado.' });
-            }
             const resultados = await SolicitacaoAtendimentoModel.listarTodas();
             res.status(200).json(resultados);
         } catch (err) {
@@ -47,14 +36,9 @@ const SolicitacaoAtendimentoController = {
     buscarPorId: async (req, res) => {
         try {
             const { id } = req.params;
-            const usuarioLogado = req.usuario;
             const resultado = await SolicitacaoAtendimentoModel.buscarPorId(id);
             if (!resultado) {
                 return res.status(404).json({ error: 'Solicitação não encontrada.' });
-            }
-            // Só permite se for Adm ou dono da solicitação
-            if (usuarioLogado.tipo_usuario !== 'Adm' && usuarioLogado.id != resultado.id_usuario) {
-                return res.status(403).json({ error: 'Acesso negado.' });
             }
             res.status(200).json(resultado);
         } catch (err) {
@@ -66,11 +50,6 @@ const SolicitacaoAtendimentoController = {
     buscarPorUsuario: async (req, res) => {
         try {
             const { id_usuario } = req.params;
-            const usuarioLogado = req.usuario;
-            // Só permite se for Adm ou o próprio usuário
-            if (usuarioLogado.tipo_usuario !== 'Adm' && usuarioLogado.id != id_usuario) {
-                return res.status(403).json({ error: 'Acesso negado.' });
-            }
             const resultados = await SolicitacaoAtendimentoModel.buscarPorUsuario(id_usuario);
             res.status(200).json(resultados);
         } catch (err) {
@@ -82,14 +61,9 @@ const SolicitacaoAtendimentoController = {
     editar: async (req, res) => {
         try {
             const { id } = req.params;
-            const usuarioLogado = req.usuario;
             const resultado = await SolicitacaoAtendimentoModel.buscarPorId(id);
             if (!resultado) {
                 return res.status(404).json({ error: 'Solicitação não encontrada.' });
-            }
-            // Só permite se for Adm ou dono da solicitação
-            if (usuarioLogado.tipo_usuario !== 'Adm' && usuarioLogado.id != resultado.id_usuario) {
-                return res.status(403).json({ error: 'Acesso negado.' });
             }
             const dados = req.body;
             await SolicitacaoAtendimentoModel.editar(id, dados);
@@ -103,14 +77,9 @@ const SolicitacaoAtendimentoController = {
     deletar: async (req, res) => {
         try {
             const { id } = req.params;
-            const usuarioLogado = req.usuario;
             const resultado = await SolicitacaoAtendimentoModel.buscarPorId(id);
             if (!resultado) {
                 return res.status(404).json({ error: 'Solicitação não encontrada.' });
-            }
-            // Só permite se for Adm ou dono da solicitação
-            if (usuarioLogado.tipo_usuario !== 'Adm' && usuarioLogado.id != resultado.id_usuario) {
-                return res.status(403).json({ error: 'Acesso negado.' });
             }
             await SolicitacaoAtendimentoModel.deletar(id);
             res.status(200).json({ message: 'Solicitação excluída com sucesso!' });

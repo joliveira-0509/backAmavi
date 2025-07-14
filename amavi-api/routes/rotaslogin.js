@@ -20,4 +20,7 @@ router.delete('/deletar-adm/:cpf', loginController.autenticarToken, loginControl
 // Rota para verificar login (protegida)
 router.get('/verificar-login', loginController.autenticarToken, loginController.verificarLogin);
 
+// Rota para deletar login (protegida e restrita a Adm)
+router.delete('/deletar-login/:cpf', loginController.autenticarToken, loginController.somenteAdmin, loginController.deletarLogin);
+
 module.exports = router;

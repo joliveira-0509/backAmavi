@@ -175,6 +175,26 @@ exports.deletarAdm = async (req, res) => {
     }
 };
 
+exports.deletarLogin = async (req, res) => {
+    const { cpf } = req.params;
+
+    if (!cpf) return res.status(400).json({ error: 'CPF é obrigatório.' });
+    if (!validateCPF(cpf)) return res.status(400).json({ error: 'CPF inválido.' });
+
+    try {
+        const usuario = await LoginModel.buscarPorCpf(cpf);
+        if (!usuario) {
+            return res.status(404).json({ error: 'Usuário não encontrado.' });
+        }
+
+        await LoginModel.deletarPorCpf(cpf);
+        res.status(200).json({ message: 'Login deletado com sucesso.' });
+    } catch (err) {
+        console.error('Erro ao deletar login:', err);
+        res.status(500).json({ error: 'Erro interno ao deletar login.' });
+    }
+};
+
 /**
  * Middleware para autenticação via JWT.
  */

@@ -1,3 +1,4 @@
+
 const express = require('express');
 const router = express.Router();
 const UsuariosController = require('../controllers/usuariosController');
@@ -15,8 +16,9 @@ const multiUpload = upload.fields([
 // Cadastro de usuário com foto e laudo médico
 router.post('/Usuarios', multiUpload, UsuariosController.cadastrarUsuario);
 
-// Buscar usuários (por nome ou todos)
+// Buscar usuários (por nome, CPF ou todos)
 router.get('/Usuarios', autenticarToken, UsuariosController.buscarUsuariosPorNome);
+router.get('/Usuarios/cpf/:cpf', autenticarToken, UsuariosController.buscarPorCpf);
 router.get('/Usuarios/todos', UsuariosController.buscarTodosUsuarios);
 
 // Buscar, atualizar e deletar por ID

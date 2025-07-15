@@ -464,5 +464,44 @@ const UsuariosController = {
         }
     },
 };
+/**
+ * Busca usuário por CPF
+ * - Apenas o próprio usuário ou administradores podem buscar
+ */
+buscarPorCpf: async (req, res) => {
+    try {
+        const { cpf } = req.params; // Obtém o CPF da URL
+        const usuarioLogado = req.usuario; // Obtém o usuário logado
 
+        // Validação do formato do CPF
+        const cpfLimpo = cpf.replace(/[.\-]/g, ''); // Remove pontos e traços do CPF
+        if (!/^\d{11}$/.test(cpfLimpo)) {
+            return res.status(400).json({ error: 'CPF inválido. Deve conter 11 dígitos numéricos.' });
+        }
+
+        // Restringe acesso para não administradores
+        if (usuarioLogado.tipo_usuario !== 'Adm' && usuarioLogado.cpf !== cpfLimpo) {
+            return res.status(403).json({ error: 'Acesso negado. Apenas administradores ou o próprio usuário podem buscar por CPF.' });
+        }
+
+        // Busca usuário pelo CPF
+        const usuario = await UsuariosModel.buscarPorCpf(cpfLimpo);
+        if (!usuario) {
+            return res.status(404).json({ error: 'Usuário não encontrado.' });
+        }
+
+        // Se houver foto_blob, converte para base64
+        if (usuario.foto_blob) {
+            usuario.foto_base64 = `data:image/jpeg;base64,${usuario.foto_blob.toString('base64')}`;
+        } else {
+            usuario.foto_base64 = null;
+        }
+        delete usuario.foto_blob; // Remove o campo foto_blob
+
+        return res.status(200).json(usuario); // Retorna o usuário encontrado
+    } catch (err) {
+        console.error('Erro ao buscar usuário por CPF:', err);
+        return res.status(500).json({ error: 'Erro ao buscar usuário por CPF.', details: err.message });
+    }
+},
 module.exports = UsuariosController;

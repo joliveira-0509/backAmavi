@@ -386,12 +386,9 @@ const UsuariosController = {
 
     /**
      * Lista todos os usuários do sistema
-     * - Apenas administradores podem acessar
+     * - Qualquer usuário autenticado pode acessar
      */
     buscarTodosUsuarios: async (req, res) => {
-        if (!req.usuario || req.usuario.tipo_usuario !== 'Adm') {
-            return res.status(403).json({ error: 'Acesso negado.' });
-        }
         try {
             const sql = `SELECT * FROM Usuarios`; // Consulta SQL para buscar todos os usuários
             const [rows] = await db.execute(sql); // Executa a consulta

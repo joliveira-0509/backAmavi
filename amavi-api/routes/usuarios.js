@@ -18,7 +18,7 @@ router.post('/Usuarios', multiUpload, UsuariosController.cadastrarUsuario);
 
 // Buscar usuários (por nome, CPF ou todos)
 router.get('/Usuarios', autenticarToken, UsuariosController.buscarUsuariosPorNome);
-router.get('/Usuarios/cpf/:cpf', autenticarToken, UsuariosController.buscarPorCpf);
+router.get('/Usuarios/cpf/:cpf', UsuariosController.buscarPorCpf);
 router.get('/Usuarios/todos', UsuariosController.buscarTodosUsuarios);
 
 // Buscar, atualizar e deletar por ID
